@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BKC Coin - Fixed Version</title>
+    <meta name="description" content="BKC Coin - Tap to Earn Game with Minimal Economy">
+    <meta name="theme-color" content="#667eea">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="webapp/manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="webapp/assets/coin.svg">
+    <link rel="apple-touch-icon" href="webapp/assets/coin.svg">
+    
+    <!-- Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('webapp/sw.js');
+        }
+    </script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+        
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-size: 1.2em;
+        }
+        
+        .error {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .error h1 {
+            color: #ff6b6b;
+            margin-bottom: 20px;
+        }
+        
+        .retry-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        .retry-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">
+        🚀 Loading BKC Coin...
+    </div>
+    
+    <div id="error" class="error" style="display: none;">
+        <div>
+            <h1>❌ Failed to load BKC Coin</h1>
+            <p>Please check your internet connection and try again.</p>
+            <button class="retry-btn" onclick="location.reload()">Retry</button>
+        </div>
+    </div>
+    
+    <!-- Minimal Ads Manager -->
+    <script src="webapp/minimal_ads_manager.js"></script>
+    
+    <!-- Main App -->
+    <script src="webapp/app_fixed.js"></script>
+    
+    <script>
+        // Error handling
+        window.addEventListener('error', function(e) {
+            console.error('Application error:', e.error);
+            showError('Application error occurred');
+        });
+        
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('Unhandled promise rejection:', e.reason);
+            showError('Network error occurred');
+        });
+        
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'flex';
+            const errorText = document.querySelector('#error p');
+            if (errorText) {
+                errorText.textContent = message;
+            }
+        }
+        
+        // Check if app loaded successfully
+        setTimeout(function() {
+            if (!window.bkcApp || !window.bkcApp.isInitialized) {
+                showError('Failed to initialize application');
+            } else {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }, 5000);
+        
+        // PWA install prompt
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show install button after 10 seconds
+            setTimeout(() => {
+                if (deferredPrompt && window.bkcApp) {
+                    showInstallPrompt();
+                }
+            }, 10000);
+        });
+        
+        function showInstallPrompt() {
+            const installBtn = document.createElement('button');
+            installBtn.className = 'bkc-install-btn';
+            installBtn.innerHTML = '📱 Install BKC Coin';
+            installBtn.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                background: linear-gradient(135deg, #667eea, #764ba2);
+                color: white;
+                border: none;
+                padding: 12px 20px;
+                border-radius: 12px;
+                cursor: pointer;
+                font-weight: bold;
+                z-index: 10000;
+                animation: slideInLeft 0.5s ease;
+            `;
+            
+            installBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        console.log('PWA installation accepted');
+                    }
+                    deferredPrompt = null;
+                    installBtn.remove();
+                }
+            });
+            
+            document.body.appendChild(installBtn);
+            
+            // Auto-hide after 30 seconds
+            setTimeout(() => {
+                if (installBtn.parentNode) {
+                    installBtn.style.animation = 'slideOutLeft 0.5s ease';
+                    setTimeout(() => installBtn.remove(), 500);
+                }
+            }, 30000);
+        }
+        
+        // Add slide animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInLeft {
+                from {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOutLeft {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

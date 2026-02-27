@@ -1,0 +1,181 @@
+version: '3.8'
+
+services:
+  # 🚀 Server 1 (Render #1)
+  bkc-server-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bkc-server-1
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    env_file:
+      - ./configs/server1.env
+    environment:
+      - INSTANCE_ID=server_1
+      - CLUSTER_SIZE=3
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - bkc-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # 🚀 Server 2 (Render #2)
+  bkc-server-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bkc-server-2
+    ports:
+      - "8081:8081"
+      - "9091:9091"
+    env_file:
+      - ./configs/server2.env
+    environment:
+      - INSTANCE_ID=server_2
+      - CLUSTER_SIZE=3
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - bkc-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # 🚀 Server 3 (Render #3)
+  bkc-server-3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bkc-server-3
+    ports:
+      - "8082:8082"
+      - "9092:9092"
+    env_file:
+      - ./configs/server3.env
+    environment:
+      - INSTANCE_ID=server_3
+      - CLUSTER_SIZE=3
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - bkc-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # 🔄 Load Balancer (Nginx)
+  nginx-lb:
+    image: nginx:alpine
+    container_name: bkc-nginx-lb
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - bkc-server-1
+      - bkc-server-2
+      - bkc-server-3
+    networks:
+      - bkc-network
+    restart: unless-stopped
+
+  # 📊 Prometheus (Monitoring)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: bkc-prometheus
+    ports:
+      - "9093:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - bkc-network
+    restart: unless-stopped
+
+  # 📈 Grafana (Dashboard)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: bkc-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+    networks:
+      - bkc-network
+    restart: unless-stopped
+
+  # 🗄️ Redis (Cache)
+  redis:
+    image: redis:alpine
+    container_name: bkc-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - bkc-network
+    restart: unless-stopped
+
+  # 📊 Redis Commander (Redis UI)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: bkc-redis-commander
+    ports:
+      - "8083:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+    networks:
+      - bkc-network
+    restart: unless-stopped
+
+networks:
+  bkc-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  redis_data:

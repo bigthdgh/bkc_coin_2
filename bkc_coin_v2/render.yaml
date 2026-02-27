@@ -1,0 +1,69 @@
+services:
+  # 🎯 BKC Coin Multi-Service - Render #1
+  - type: web
+    name: bkc-coin-render1
+    env: docker
+    plan: free
+    buildCommand: go build -o bkc-coin ./cmd/server/main.go
+    startCommand: ./bkc-coin
+    healthCheckPath: /health
+    healthCheckTimeout: 10
+    healthCheckInterval: 30
+    healthCheckGracePeriod: 60
+    envVars:
+      - key: SERVICE_TYPE
+        value: render
+      - key: TURSO_URL_RENDER
+        value: libsql://turso-taps-1-turso-taps-1.aws-eu-west-1.turso.io
+      - key: TURSO_TOKEN_RENDER
+        value: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzE4Nzc5MjIsImlkIjoiNWZjMzM0MDAtNGU2My00OGU5LTk1N2EtMWNlNTA2MjRlMTlmIiwicmlkIjoiNmVkNjljMjQtZjhkOS00MjVjLWI1OTItNGIwYTI1YzBmN2E0In0.UtZly13s0KVInnWA4pKIyj9SRcOfQpwt9KxAX1I_RuaycnVZpxm-B1eV8JFb0AJP5yzubF1tBiQSo2yvlvgzCg
+      - key: COCKROACH_URL_RENDER
+        value: postgresql://ggg_gmail_c:<ENTER-SQL-USER-PASSWORD>@padded-redfox-22048.j77.aws-eu-west-1.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full
+      - key: NEON_URL_RENDER
+        value: postgresql://neondb_owner:npg_YHUpozmLq2I8@ep-snowy-leaf-ai33um2u-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+      - key: SUPABASE_URL_RENDER
+        value: https://azssgpodmmdnuoojlzuv.supabase.co
+      - key: SUPABASE_KEY_RENDER
+        value: sb_publishable_fiFpebFLctTeHXVUpJVcaA_XjmtXwzT
+      - key: SUPABASE_SECRET_RENDER
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6c3NncG9kbW1kbnVvb2psenV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzNDY1MzMsImV4cCI6MjA4NjkyMjUzM30._0BXu4Dzsw2UEFeBNnz8cB4u5HH2SwKDbK3iiwBrBh0
+      - key: UPSTASH_URL_RENDER
+        value: https://bkc-sessions-1.upstash.io
+      - key: UPSTASH_TOKEN_RENDER
+        value: ey...
+      - key: SECRET_KEY_RENDER
+        value: bkc-secret-key-render1-2024
+      - key: JWT_SECRET_RENDER
+        value: bkc-jwt-secret-render1-2024
+      - key: TELEGRAM_BOT_TOKEN
+        value: 8574043213:AAEAq3LHxM_38pdoiU3AKnuzzWIzEP8LMi0
+      - key: ADMIN_TELEGRAM_ID
+        value: 8425434588
+      - key: MAX_DAILY_EARNINGS
+        value: "50000"
+      - key: TAP_VALUE_BASE
+        value: "10"
+      - key: ENERGY_REGEN_SECONDS
+        value: "1"
+      - key: MAX_ENERGY
+        value: "1000"
+      - key: LOG_LEVEL
+        value: info
+      - key: METRICS_ENABLED
+        value: "true"
+      - key: HEALTH_CHECK_INTERVAL
+        value: "30"
+      - key: ALLOWED_ORIGINS
+        value: https://bkc-coin-render1.onrender.com,https://bkc-coin-koyeb.koyeb.app,https://bkc-coin-render2.onrender.com,https://bkc-coin-render3.onrender.com
+
+  # 🚀 Redis Add-on для Render #1
+  - type: redis
+    name: bkc-redis-render1
+    plan: free
+    ipAllowList: []
+    envVars:
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: bkc-redis-render1
+          property: connectionString

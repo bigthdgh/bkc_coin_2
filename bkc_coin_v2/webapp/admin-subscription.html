@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ панель - Управление подписками</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .subscription-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: transform 0.3s ease;
+        }
+        .subscription-card:hover {
+            transform: translateY(-5px);
+        }
+        .feature-badge {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
+                <i class="fas fa-crown mr-3"></i>Управление подписками
+            </h1>
+            <p class="text-center text-gray-400 mt-2">Создание и настройка планов подписок</p>
+        </header>
+
+        <!-- Tabs -->
+        <div class="flex space-x-4 mb-8 border-b border-gray-700">
+            <button onclick="showTab('create')" class="tab-btn px-6 py-3 font-semibold hover:text-purple-400 transition-colors border-b-2 border-purple-500">
+                <i class="fas fa-plus mr-2"></i>Создать подписку
+            </button>
+            <button onclick="showTab('list')" class="tab-btn px-6 py-3 font-semibold hover:text-purple-400 transition-colors">
+                <i class="fas fa-list mr-2"></i>Список подписок
+            </button>
+            <button onclick="showTab('stats')" class="tab-btn px-6 py-3 font-semibold hover:text-purple-400 transition-colors">
+                <i class="fas fa-chart-bar mr-2"></i>Статистика
+            </button>
+        </div>
+
+        <!-- Create Subscription Tab -->
+        <div id="create-tab" class="tab-content active">
+            <div class="max-w-2xl mx-auto">
+                <div class="bg-gray-800 rounded-lg p-6 shadow-xl">
+                    <h2 class="text-2xl font-bold mb-6 text-purple-400">
+                        <i class="fas fa-magic mr-2"></i>Создание новой подписки
+                    </h2>
+                    
+                    <form id="subscriptionForm" class="space-y-6">
+                        <!-- Basic Info -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Название подписки</label>
+                                <input type="text" id="subName" required
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    placeholder="Например: Premium">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Описание</label>
+                                <input type="text" id="subDescription"
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    placeholder="Описание преимуществ">
+                            </div>
+                        </div>
+
+                        <!-- Pricing -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Цена в BKC</label>
+                                <input type="number" id="subPriceBKC" step="0.01" min="0"
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    placeholder="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Цена в TON</label>
+                                <input type="number" id="subPriceTON" step="0.01" min="0"
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    placeholder="0">
+                            </div>
+                        </div>
+
+                        <!-- Tax Rate -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Налог на транзакции (%)</label>
+                            <input type="number" id="subTaxRate" step="0.1" min="0" max="100"
+                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                placeholder="10">
+                        </div>
+
+                        <!-- Features -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Привилегии (каждая с новой строки)</label>
+                            <textarea id="subFeatures" rows="4"
+                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                placeholder="Базовые тапы&#10;Стандартная энергия&#10;10% налог"></textarea>
+                        </div>
+
+                        <!-- Payment Options -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="allowBKC" checked
+                                    class="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500">
+                                <label for="allowBKC" class="ml-2">Разрешить оплату в BKC</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="allowTON" checked
+                                    class="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500">
+                                <label for="allowTON" class="ml-2">Разрешить оплату в TON</label>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="flex justify-center">
+                            <button type="submit"
+                                class="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105">
+                                <i class="fas fa-rocket mr-2"></i>Создать подписку
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- List Subscriptions Tab -->
+        <div id="list-tab" class="tab-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="subscriptionsList">
+                <!-- Subscriptions will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Stats Tab -->
+        <div id="stats-tab" class="tab-content">
+            <div class="max-w-4xl mx-auto">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-gray-800 rounded-lg p-6 text-center">
+                        <i class="fas fa-users text-4xl text-blue-500 mb-4"></i>
+                        <h3 class="text-2xl font-bold" id="totalSubscribers">0</h3>
+                        <p class="text-gray-400">Всего подписчиков</p>
+                    </div>
+                    <div class="bg-gray-800 rounded-lg p-6 text-center">
+                        <i class="fas fa-dollar-sign text-4xl text-green-500 mb-4"></i>
+                        <h3 class="text-2xl font-bold" id="totalRevenue">0 BKC</h3>
+                        <p class="text-gray-400">Общий доход</p>
+                    </div>
+                    <div class="bg-gray-800 rounded-lg p-6 text-center">
+                        <i class="fas fa-chart-line text-4xl text-purple-500 mb-4"></i>
+                        <h3 class="text-2xl font-bold" id="activeSubscriptions">0</h3>
+                        <p class="text-gray-400">Активные подписки</p>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h3 class="text-xl font-bold mb-4">Популярность подписок</h3>
+                    <div id="popularityChart">
+                        <!-- Chart will be rendered here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-purple-500');
+            });
+            
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('border-purple-500');
+            
+            if (tabName === 'list') {
+                loadSubscriptions();
+            } else if (tabName === 'stats') {
+                loadStats();
+            }
+        }
+
+        // Create subscription
+        document.getElementById('subscriptionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const features = document.getElementById('subFeatures').value
+                .split('\n')
+                .filter(f => f.trim())
+                .map(f => f.trim());
+            
+            const subscriptionData = {
+                name: document.getElementById('subName').value,
+                description: document.getElementById('subDescription').value,
+                price_bkc: parseFloat(document.getElementById('subPriceBKC').value) || 0,
+                price_ton: parseFloat(document.getElementById('subPriceTON').value) || 0,
+                tax_rate: parseFloat(document.getElementById('subTaxRate').value) || 10,
+                features: features,
+                metadata: {
+                    allow_bkc: document.getElementById('allowBKC').checked,
+                    allow_ton: document.getElementById('allowTON').checked,
+                    created_at: new Date().toISOString()
+                }
+            };
+
+            try {
+                const response = await fetch('/api/v1/admin/subscriptions/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(subscriptionData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Подписка успешно создана!');
+                    document.getElementById('subscriptionForm').reset();
+                    showTab('list');
+                } else {
+                    alert('Ошибка: ' + (result.message || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                alert('Ошибка соединения: ' + error.message);
+            }
+        });
+
+        // Load subscriptions
+        async function loadSubscriptions() {
+            try {
+                const response = await fetch('/api/v1/admin/subscriptions/list');
+                const result = await response.json();
+                
+                const container = document.getElementById('subscriptionsList');
+                container.innerHTML = '';
+                
+                if (result.success && result.subscriptions) {
+                    result.subscriptions.forEach(sub => {
+                        const card = createSubscriptionCard(sub);
+                        container.appendChild(card);
+                    });
+                } else {
+                    container.innerHTML = '<p class="text-center text-gray-400 col-span-full">Подписки не найдены</p>';
+                }
+            } catch (error) {
+                console.error('Error loading subscriptions:', error);
+            }
+        }
+
+        // Create subscription card
+        function createSubscriptionCard(sub) {
+            const card = document.createElement('div');
+            card.className = 'subscription-card rounded-lg p-6 text-white';
+            
+            const features = sub.features.map(f => 
+                `<li class="flex items-center"><i class="fas fa-check text-green-400 mr-2"></i>${f}</li>`
+            ).join('');
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="text-xl font-bold">${sub.name}</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="editSubscription('${sub.id}')" 
+                            class="text-blue-400 hover:text-blue-300">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteSubscription('${sub.id}')" 
+                            class="text-red-400 hover:text-red-300">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <p class="text-gray-200 mb-4">${sub.description || 'Без описания'}</p>
+                <div class="mb-4">
+                    <div class="text-2xl font-bold mb-2">
+                        ${sub.price_bkc > 0 ? sub.price_bkc.toLocaleString() + ' BKC' : 'Бесплатно'}
+                        ${sub.price_ton > 0 ? ' / ' + sub.price_ton + ' TON' : ''}
+                    </div>
+                    <div class="feature-badge inline-block px-3 py-1 rounded-full text-sm">
+                        Налог: ${sub.tax_rate}%
+                    </div>
+                </div>
+                <ul class="space-y-2 text-sm">
+                    ${features}
+                </ul>
+                <div class="mt-4 pt-4 border-t border-gray-600">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-400">
+                            ID: ${sub.id}
+                        </span>
+                        <span class="text-xs ${sub.is_active ? 'text-green-400' : 'text-red-400'}">
+                            ${sub.is_active ? 'Активна' : 'Неактивна'}
+                        </span>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Edit subscription
+        async function editSubscription(id) {
+            // TODO: Implement edit functionality
+            alert('Редактирование подписок будет доступно в следующем обновлении');
+        }
+
+        // Delete subscription
+        async function deleteSubscription(id) {
+            if (!confirm('Вы уверены, что хотите удалить эту подписку?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/v1/admin/subscriptions/delete?id=${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Подписка успешно удалена!');
+                    loadSubscriptions();
+                } else {
+                    alert('Ошибка: ' + (result.message || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                alert('Ошибка соединения: ' + error.message);
+            }
+        }
+
+        // Load statistics
+        async function loadStats() {
+            // TODO: Implement statistics loading
+            document.getElementById('totalSubscribers').textContent = '1,234';
+            document.getElementById('totalRevenue').textContent = '2,456,789 BKC';
+            document.getElementById('activeSubscriptions').textContent = '892';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load initial data if needed
+        });
+    </script>
+</body>
+</html>

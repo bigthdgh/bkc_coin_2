@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - NFT Manager</title>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        input, select, textarea, button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            margin: 5px 0;
+        }
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        button {
+            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        .nft-item {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #f5576c;
+        }
+        .price-highlight {
+            font-size: 20px;
+            font-weight: bold;
+            color: #f5576c;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #f5576c;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 15px 25px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+            border-radius: 8px 8px 0 0;
+        }
+        .tab.active {
+            background: rgba(245,87,108,0.3);
+            border-bottom: 3px solid #f5576c;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛠️ Admin Panel - NFT Manager</h1>
+        <p>Управление NFT предметами и экономикой проекта</p>
+
+        <!-- Табы -->
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('create')">➕ Создать NFT</button>
+            <button class="tab" onclick="showTab('list')">📋 Список NFT</button>
+            <button class="tab" onclick="showTab('stats')">📊 Статистика</button>
+        </div>
+
+        <!-- Таб создания NFT -->
+        <div id="create-tab" class="tab-content active">
+            <div class="card">
+                <h2>🎨 Создать новый NFT</h2>
+                <form id="create-nft-form">
+                    <div class="two-column">
+                        <div>
+                            <div class="form-group">
+                                <label>Название NFT:</label>
+                                <input type="text" id="nft-name" placeholder="Золотой бульдозер" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Описание:</label>
+                                <textarea id="nft-description" placeholder="Увеличивает награду в 10 раз +2000 энергии" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Цена в BKC:</label>
+                                <input type="number" id="nft-price-bkc" placeholder="50000" step="100" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Цена в TON:</label>
+                                <input type="number" id="nft-price-ton" placeholder="35.0" step="0.1" min="0">
+                            </div>
+                        </div>
+                        <div>
+                            <div class="form-group">
+                                <label>Множитель тапов:</label>
+                                <input type="number" id="nft-tap-multiplier" placeholder="10.0" step="0.1" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label>Бонус к энергии:</label>
+                                <input type="number" id="nft-energy-bonus" placeholder="2000" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Бонус к дневным тапам:</label>
+                                <input type="number" id="nft-daily-bonus" placeholder="5000" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Способы оплаты:</label>
+                                <div style="display: flex; gap: 20px;">
+                                    <label><input type="checkbox" id="allow-bkc" checked> За BKC</label>
+                                    <label><input type="checkbox" id="allow-ton" checked> За TON</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit">🚀 Создать NFT</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Таб списка NFT -->
+        <div id="list-tab" class="tab-content">
+            <div class="card">
+                <h2>📋 Существующие NFT</h2>
+                <div id="nft-list">
+                    <!-- NFT будут загружены сюда -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Таб статистики -->
+        <div id="stats-tab" class="tab-content">
+            <div class="card">
+                <h2>📊 Статистика продаж</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-nfts">15</div>
+                        <div>Всего NFT</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="active-nfts">12</div>
+                        <div>Активных NFT</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="revenue-bkc">2.5M</div>
+                        <div>Доход в BKC</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="revenue-ton">87.75</div>
+                        <div>Доход в TON</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🏆 Топ продаваемые NFT</h3>
+                <div id="top-nfts">
+                    <!-- Топ NFT будут загружены сюда -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'create';
+
+        // Переключение табов
+        function showTab(tabName) {
+            // Скрываем все табы
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Показываем выбранный таб
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+            currentTab = tabName;
+
+            // Загружаем данные для таба
+            if (tabName === 'list') {
+                loadNFTList();
+            } else if (tabName === 'stats') {
+                loadNFTStats();
+            }
+        }
+
+        // Создание NFT
+        document.getElementById('create-nft-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const nftData = {
+                name: document.getElementById('nft-name').value,
+                description: document.getElementById('nft-description').value,
+                price_bkc: parseFloat(document.getElementById('nft-price-bkc').value) || 0,
+                price_ton: parseFloat(document.getElementById('nft-price-ton').value) || 0,
+                tap_multiplier: parseFloat(document.getElementById('nft-tap-multiplier').value) || 1,
+                energy_bonus: parseInt(document.getElementById('nft-energy-bonus').value) || 0,
+                daily_tap_bonus: parseInt(document.getElementById('nft-daily-bonus').value) || 0,
+                allow_bkc: document.getElementById('allow-bkc').checked,
+                allow_ton: document.getElementById('allow-ton').checked,
+            };
+
+            try {
+                const response = await fetch('/api/v1/admin/nft/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(nftData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('✅ NFT успешно создан!');
+                    document.getElementById('create-nft-form').reset();
+                } else {
+                    alert('❌ Ошибка: ' + (result.error || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('❌ Ошибка при создании NFT');
+            }
+        });
+
+        // Загрузка списка NFT
+        async function loadNFTList() {
+            try {
+                const response = await fetch('/api/v1/admin/nft/list');
+                const result = await response.json();
+
+                if (result.success) {
+                    const nftList = document.getElementById('nft-list');
+                    nftList.innerHTML = '';
+
+                    result.nfts.forEach(nft => {
+                        const nftDiv = document.createElement('div');
+                        nftDiv.className = 'nft-item';
+                        nftDiv.innerHTML = `
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <h3>${nft.name}</h3>
+                                    <p>${nft.description}</p>
+                                    <div><strong>ID:</strong> ${nft.id}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="price-highlight">${nft.price_bkc} BKC</div>
+                                    <div>или ${nft.price_ton} TON</div>
+                                    <div><strong>Множитель:</strong> x${nft.tap_multiplier}</div>
+                                    <div><strong>Энергия:</strong> +${nft.energy_bonus}</div>
+                                    <div><strong>Тапы в день:</strong> +${nft.daily_tap_bonus}</div>
+                                    <div style="margin-top: 10px;">
+                                        <button onclick="editNFT('${nft.id}')" style="margin-right: 10px;">✏️ Редактировать</button>
+                                        <button onclick="deleteNFT('${nft.id}')" style="background: #e74c3c;">🗑️ Удалить</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        nftList.appendChild(nftDiv);
+                    });
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки NFT:', error);
+            }
+        }
+
+        // Загрузка статистики
+        async function loadNFTStats() {
+            try {
+                const response = await fetch('/api/v1/admin/nft/stats');
+                const result = await response.json();
+
+                if (result.success) {
+                    const stats = result.stats;
+                    
+                    // Обновляем общую статистику
+                    document.getElementById('total-nfts').textContent = stats.total_nfts;
+                    document.getElementById('active-nfts').textContent = stats.active_nfts;
+                    document.getElementById('revenue-bkc').textContent = formatNumber(stats.revenue_bkc);
+                    document.getElementById('revenue-ton').textContent = stats.revenue_ton.toFixed(2);
+
+                    // Загружаем топ NFT
+                    const topNFTsDiv = document.getElementById('top-nfts');
+                    topNFTsDiv.innerHTML = '';
+
+                    stats.top_selling_nfts.forEach(nft => {
+                        const nftDiv = document.createElement('div');
+                        nftDiv.className = 'nft-item';
+                        nftDiv.innerHTML = `
+                            <h4>${nft.name}</h4>
+                            <div><strong>Продано:</strong> ${nft.sold_count} шт.</div>
+                            <div><strong>Доход:</strong> ${formatNumber(nft.revenue)} BKC</div>
+                        `;
+                        topNFTsDiv.appendChild(nftDiv);
+                    });
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки статистики:', error);
+            }
+        }
+
+        // Редактирование NFT
+        async function editNFT(nftId) {
+            // TODO: Открыть модальное окно с формой редактирования
+            alert('🔧 Редактирование NFT будет доступно в следующей версии');
+        }
+
+        // Удаление NFT
+        async function deleteNFT(nftId) {
+            if (!confirm('⚠️ Удалить этот NFT? Это действие нельзя отменить.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/v1/admin/nft/delete?id=${nftId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('✅ NFT удален!');
+                    loadNFTList(); // Перезагружаем список
+                } else {
+                    alert('❌ Ошибка: ' + (result.error || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                console.error('Ошибка удаления NFT:', error);
+                alert('❌ Ошибка при удалении NFT');
+            }
+        }
+
+        // Форматирование чисел
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+
+        // Инициализация при загрузке
+        window.onload = function() {
+            // Загружаем данные если нужно
+        };
+    </script>
+</body>
+</html>

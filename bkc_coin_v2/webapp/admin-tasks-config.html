@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BKC Admin - Настройка заданий</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .admin-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .form-input {
+            transition: all 0.3s ease;
+        }
+        
+        .form-input:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .save-btn {
+            background: linear-gradient(45deg, #10b981, #059669);
+            transition: all 0.3s ease;
+        }
+        
+        .save-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+        }
+        
+        .task-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .task-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Animated Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute w-96 h-96 bg-purple-600 rounded-full opacity-10 blur-3xl -top-48 -left-48"></div>
+        <div class="absolute w-96 h-96 bg-blue-600 rounded-full opacity-10 blur-3xl -bottom-48 -right-48"></div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 relative z-10">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-5xl font-bold mb-4 bg-gradient-to-r from-orange-400 to-red-600 bg-clip-text text-transparent">
+                <i class="fas fa-tasks mr-4"></i>НАСТРОЙКА ЗАДАНИЙ
+            </h1>
+            <p class="text-xl text-gray-300">Управление наградами и ссылками</p>
+        </header>
+
+        <!-- Tasks Configuration -->
+        <div class="admin-container rounded-2xl p-8 max-w-4xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                
+                <!-- Telegram Task -->
+                <div class="task-card rounded-xl p-6">
+                    <h3 class="text-xl font-bold mb-4 text-cyan-400">
+                        <i class="fab fa-telegram mr-2"></i>Telegram Задание
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Награда (BKC)</label>
+                            <input type="number" id="telegramReward" value="600" 
+                                   class="form-input w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500 focus:ring-opacity-50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Канал</label>
+                            <input type="text" id="telegramChannel" value="bkc_coin_official" placeholder="@channel" 
+                                   class="form-input w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500 focus:ring-opacity-50">
+                        </div>
+                        <div>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="telegramActive" checked class="bg-gray-700 text-cyan-500 rounded border-gray-600 focus:ring-cyan-500">
+                                <span class="ml-2">Активно</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TikTok Task -->
+                <div class="task-card rounded-xl p-6">
+                    <h3 class="text-xl font-bold mb-4 text-pink-400">
+                        <i class="fab fa-tiktok mr-2"></i>TikTok Задание
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Награда (BKC)</label>
+                            <input type="number" id="tiktokReward" value="3500" 
+                                   class="form-input w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-pink-500 focus:ring-2 focus:ring-pink-500 focus:ring-opacity-50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Канал</label>
+                            <input type="text" id="tiktokChannel" value="@bkccoin" placeholder="@channel" 
+                                   class="form-input w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-pink-500 focus:ring-2 focus:ring-pink-500 focus:ring-opacity-50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Секретные коды (через запятую)</label>
+                            <input type="text" id="tiktokCodes" value="BKC_777,TIKTOK_2024,BKC_TIKTOK" placeholder="CODE1,CODE2,CODE3" 
+                                   class="form-input w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-pink-500 focus:ring-2 focus:ring-pink-500 focus:ring-opacity-50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Минимальное время (секунды)</label>
+                            <input type="number" id="tiktokMinTime" value="15" min="5" max="300" 
+                                   class="form-input w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-pink-500 focus:ring-2 focus:ring-pink-500 focus:ring-opacity-50">
+                        </div>
+                        <div>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="tiktokActive" checked class="bg-gray-700 text-pink-500 rounded border-gray-600 focus:ring-pink-500">
+                                <span class="ml-2">Активно</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Twitter Task -->
+                <div class="task-card rounded-xl p-6">
+                    <h3 class="text-xl font-bold mb-4 text-blue-400">
+                        <i class="fab fa-twitter mr-2"></i>Twitter Задание
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Награда (BKC)</label>
+                            <input type="number" id="twitterReward" value="1500" 
+                                   class="form-input w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Канал</label>
+                            <input type="text" id="twitterChannel" value="@bkccoin" placeholder="@channel" 
+                                   class="form-input w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Минимальное время (секунды)</label>
+                            <input type="number" id="twitterMinTime" value="15" min="5" max="300" 
+                                   class="form-input w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                        </div>
+                        <div>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="twitterActive" checked class="bg-gray-700 text-blue-500 rounded border-gray-600 focus:ring-blue-500">
+                                <span class="ml-2">Активно</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Save Button -->
+            <div class="text-center">
+                <button onclick="saveTasksConfig()" class="save-btn px-8 py-4 text-white font-bold rounded-xl text-lg">
+                    <i class="fas fa-save mr-2"></i>СОХРАНИТЬ НАСТРОЙКИ
+                </button>
+            </div>
+        </div>
+
+        <!-- Success Message -->
+        <div id="successMessage" class="fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg hidden z-50">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span id="successText">Настройки сохранены!</span>
+        </div>
+    </div>
+
+    <script>
+        // Загрузка текущих настроек
+        async function loadTasksConfig() {
+            try {
+                const adminToken = localStorage.getItem('bkc_admin_token');
+                if (!adminToken) {
+                    alert('Требуется авторизация');
+                    window.location.href = '/admin-login.html';
+                    return;
+                }
+
+                const response = await fetch('/api/v1/admin/tasks-config', {
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const config = await response.json();
+                    if (config.success) {
+                        // Заполняем форму текущими значениями
+                        document.getElementById('telegramReward').value = config.data.telegram?.reward || 600;
+                        document.getElementById('telegramChannel').value = config.data.telegram?.channel || 'bkc_coin_official';
+                        document.getElementById('telegramActive').checked = config.data.telegram?.active !== false;
+
+                        document.getElementById('tiktokReward').value = config.data.tiktok?.reward || 3500;
+                        document.getElementById('tiktokChannel').value = config.data.tiktok?.channel || '@bkccoin';
+                        document.getElementById('tiktokCodes').value = config.data.tiktok?.codes?.join(',') || 'BKC_777,TIKTOK_2024,BKC_TIKTOK';
+                        document.getElementById('tiktokMinTime').value = config.data.tiktok?.minTime || 15;
+                        document.getElementById('tiktokActive').checked = config.data.tiktok?.active !== false;
+
+                        document.getElementById('twitterReward').value = config.data.twitter?.reward || 1500;
+                        document.getElementById('twitterChannel').value = config.data.twitter?.channel || '@bkccoin';
+                        document.getElementById('twitterMinTime').value = config.data.twitter?.minTime || 15;
+                        document.getElementById('twitterActive').checked = config.data.twitter?.active !== false;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load tasks config:', error);
+            }
+        }
+
+        // Сохранение настроек
+        async function saveTasksConfig() {
+            try {
+                const adminToken = localStorage.getItem('bkc_admin_token');
+                if (!adminToken) {
+                    alert('Требуется авторизация');
+                    return;
+                }
+
+                const config = {
+                    telegram: {
+                        reward: parseInt(document.getElementById('telegramReward').value),
+                        channel: document.getElementById('telegramChannel').value,
+                        active: document.getElementById('telegramActive').checked
+                    },
+                    tiktok: {
+                        reward: parseInt(document.getElementById('tiktokReward').value),
+                        channel: document.getElementById('tiktokChannel').value,
+                        codes: document.getElementById('tiktokCodes').value.split(',').map(code => code.trim()),
+                        minTime: parseInt(document.getElementById('tiktokMinTime').value),
+                        active: document.getElementById('tiktokActive').checked
+                    },
+                    twitter: {
+                        reward: parseInt(document.getElementById('twitterReward').value),
+                        channel: document.getElementById('twitterChannel').value,
+                        minTime: parseInt(document.getElementById('twitterMinTime').value),
+                        active: document.getElementById('twitterActive').checked
+                    }
+                };
+
+                const response = await fetch('/api/v1/admin/tasks-config', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccessMessage('Настройки заданий успешно сохранены!');
+                } else {
+                    alert('Ошибка сохранения: ' + (result.message || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                console.error('Failed to save tasks config:', error);
+                alert('Ошибка сохранения настроек');
+            }
+        }
+
+        // Показать успешное сообщение
+        function showSuccessMessage(message) {
+            const messageEl = document.getElementById('successMessage');
+            const textEl = document.getElementById('successText');
+            
+            textEl.textContent = message;
+            messageEl.classList.remove('hidden');
+            
+            setTimeout(() => {
+                messageEl.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTasksConfig();
+        });
+
+        // Горячие клавиши
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveTasksConfig();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ панель - Барахолка</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .listing-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: transform 0.3s ease;
+        }
+        .listing-card:hover {
+            transform: translateY(-5px);
+        }
+        .escrow-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-pending { background: #fbbf24; color: #78350f; }
+        .status-completed { background: #34d399; color: #065f46; }
+        .status-disputed { background: #f87171; color: #7f1d1d; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
+                <i class="fas fa-store mr-3"></i>Барахолка - Администрирование
+            </h1>
+            <p class="text-center text-gray-400 mt-2">Управление объявлениями, escrow и рейтингами</p>
+        </header>
+
+        <!-- Tabs -->
+        <div class="flex space-x-4 mb-8 border-b border-gray-700">
+            <button onclick="showTab('config')" class="tab-btn px-6 py-3 font-semibold hover:text-purple-400 transition-colors border-b-2 border-purple-500">
+                <i class="fas fa-cog mr-2"></i>Конфигурация
+            </button>
+            <button onclick="showTab('listings')" class="tab-btn px-6 py-3 font-semibold hover:text-purple-400 transition-colors">
+                <i class="fas fa-list mr-2"></i>Объявления
+            </button>
+            <button onclick="showTab('escrow')" class="tab-btn px-6 py-3 font-semibold hover:text-purple-400 transition-colors">
+                <i class="fas fa-shield-alt mr-2"></i>Escrow
+            </button>
+            <button onclick="showTab('ratings')" class="tab-btn px-6 py-3 font-semibold hover:text-purple-400 transition-colors">
+                <i class="fas fa-star mr-2"></i>Рейтинги
+            </button>
+        </div>
+
+        <!-- Config Tab -->
+        <div id="config-tab" class="tab-content active">
+            <div class="max-w-2xl mx-auto">
+                <div class="bg-gray-800 rounded-lg p-6 shadow-xl">
+                    <h2 class="text-2xl font-bold mb-6 text-purple-400">
+                        <i class="fas fa-cog mr-2"></i>Конфигурация барахолки
+                    </h2>
+                    
+                    <form id="configForm" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Комиссия за создание объявления (BKC)</label>
+                                <input type="number" id="listingFee" step="0.01" min="0"
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    placeholder="300">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Escrow комиссия (%)</label>
+                                <input type="number" id="escrowFee" step="0.1" min="0" max="100"
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    placeholder="5.0">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Минимальная цена объявления (BKC)</label>
+                                <input type="number" id="minListingPrice" step="0.01" min="0"
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    placeholder="100">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Максимальное количество изображений</label>
+                                <input type="number" id="maxImages" min="1" max="10"
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    placeholder="5">
+                            </div>
+                        </div>
+
+                        <div class="flex justify-center">
+                            <button type="submit"
+                                class="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105">
+                                <i class="fas fa-save mr-2"></i>Сохранить конфигурацию
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Listings Tab -->
+        <div id="listings-tab" class="tab-content">
+            <div class="mb-6 flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-purple-400">
+                    <i class="fas fa-list mr-2"></i>Все объявления
+                </h2>
+                <div class="flex space-x-4">
+                    <input type="text" id="searchListing" placeholder="Поиск объявлений..." 
+                        class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    <select id="filterType" class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg">
+                        <option value="">Все типы</option>
+                        <option value="physical">Физические товары</option>
+                        <option value="fiat">Фиатные объявления</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="listingsGrid">
+                <!-- Listings will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Escrow Tab -->
+        <div id="escrow-tab" class="tab-content">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-purple-400">
+                    <i class="fas fa-shield-alt mr-2"></i>Escrow транзакции
+                </h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="escrowGrid">
+                <!-- Escrow transactions will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Ratings Tab -->
+        <div id="ratings-tab" class="tab-content">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-purple-400">
+                    <i class="fas fa-star mr-2"></i>Рейтинги пользователей
+                </h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="ratingsGrid">
+                <!-- User ratings will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentConfig = {};
+        let listings = [];
+        let escrowTransactions = [];
+        let userRatings = [];
+
+        // Tab switching
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-purple-500');
+            });
+            
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('border-purple-500');
+            
+            if (tabName === 'listings') {
+                loadListings();
+            } else if (tabName === 'escrow') {
+                loadEscrow();
+            } else if (tabName === 'ratings') {
+                loadRatings();
+            } else if (tabName === 'config') {
+                loadConfig();
+            }
+        }
+
+        // Load configuration
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/v1/marketplace/config');
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentConfig = result.config;
+                    document.getElementById('listingFee').value = currentConfig.listing_fee || 300;
+                    document.getElementById('escrowFee').value = currentConfig.escrow_fee || 5;
+                    document.getElementById('minListingPrice').value = currentConfig.min_listing_price || 100;
+                    document.getElementById('maxImages').value = currentConfig.max_images || 5;
+                }
+            } catch (error) {
+                console.error('Error loading config:', error);
+            }
+        }
+
+        // Save configuration
+        document.getElementById('configForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const configData = {
+                listing_fee: parseFloat(document.getElementById('listingFee').value) || 300,
+                escrow_fee: parseFloat(document.getElementById('escrowFee').value) || 5,
+                min_listing_price: parseFloat(document.getElementById('minListingPrice').value) || 100,
+                max_images: parseInt(document.getElementById('maxImages').value) || 5
+            };
+
+            try {
+                const response = await fetch('/api/v1/admin/marketplace/config', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(configData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Конфигурация успешно сохранена!');
+                    currentConfig = result.config;
+                } else {
+                    alert('Ошибка: ' + (result.message || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                alert('Ошибка соединения: ' + error.message);
+            }
+        });
+
+        // Load listings
+        async function loadListings() {
+            try {
+                const response = await fetch('/api/v1/marketplace/listings');
+                const result = await response.json();
+                
+                if (result.success) {
+                    listings = result.listings;
+                    renderListings();
+                }
+            } catch (error) {
+                console.error('Error loading listings:', error);
+            }
+        }
+
+        // Render listings
+        function renderListings() {
+            const container = document.getElementById('listingsGrid');
+            container.innerHTML = '';
+            
+            const searchTerm = document.getElementById('searchListing').value.toLowerCase();
+            const filterType = document.getElementById('filterType').value;
+            
+            const filteredListings = listings.filter(listing => {
+                const matchesSearch = listing.title.toLowerCase().includes(searchTerm) || 
+                                     listing.description.toLowerCase().includes(searchTerm);
+                const matchesType = !filterType || listing.type === filterType;
+                return matchesSearch && matchesType;
+            });
+            
+            filteredListings.forEach(listing => {
+                const card = createListingCard(listing);
+                container.appendChild(card);
+            });
+            
+            if (filteredListings.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-400 col-span-full">Объявления не найдены</p>';
+            }
+        }
+
+        // Create listing card
+        function createListingCard(listing) {
+            const card = document.createElement('div');
+            card.className = 'listing-card rounded-lg p-6 text-white';
+            
+            const typeIcon = listing.type === 'physical' ? 'fa-box' : 'fa-money-bill';
+            const statusColor = listing.status === 'active' ? 'text-green-400' : 'text-red-400';
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center">
+                        <i class="fas ${typeIcon} mr-2"></i>
+                        <span class="text-sm">${listing.type === 'physical' ? 'Физический товар' : 'Фиат'}</span>
+                    </div>
+                    <span class="${statusColor} text-sm">${listing.status}</span>
+                </div>
+                <h3 class="text-xl font-bold mb-2">${listing.title}</h3>
+                <p class="text-gray-300 text-sm mb-4">${listing.description || 'Без описания'}</p>
+                <div class="mb-4">
+                    <div class="text-2xl font-bold">
+                        ${listing.price.toLocaleString()} ${listing.currency.toUpperCase()}
+                    </div>
+                    <div class="text-sm text-gray-400">
+                        ${listing.location || 'Местоположение не указано'}
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="updateListingPrice('${listing.id}')" 
+                        class="flex-1 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-edit mr-1"></i>Изменить цену
+                    </button>
+                    <button onclick="removeListing('${listing.id}')" 
+                        class="flex-1 px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors">
+                        <i class="fas fa-trash mr-1"></i>Удалить
+                    </button>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-600">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-400">
+                            ID: ${listing.id}
+                        </span>
+                        <span class="text-xs text-gray-400">
+                            ${new Date(listing.created_at).toLocaleDateString()}
+                        </span>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Update listing price
+        async function updateListingPrice(listingId) {
+            const newPrice = prompt('Введите новую цену (BKC):');
+            if (!newPrice || isNaN(newPrice)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/v1/admin/marketplace/listing/price', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        listing_id: listingId,
+                        new_price: parseFloat(newPrice)
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Цена объявления успешно обновлена!');
+                    loadListings();
+                } else {
+                    alert('Ошибка: ' + (result.message || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                alert('Ошибка соединения: ' + error.message);
+            }
+        }
+
+        // Remove listing
+        async function removeListing(listingId) {
+            if (!confirm('Вы уверены, что хотите удалить это объявление?')) {
+                return;
+            }
+            
+            // TODO: Implement remove listing API
+            alert('Удаление объявлений будет доступно в следующем обновлении');
+        }
+
+        // Load escrow transactions
+        async function loadEscrow() {
+            try {
+                // TODO: Implement escrow list API
+                const mockEscrow = [
+                    {
+                        id: 'escrow_1',
+                        listing_id: 'listing_1',
+                        buyer_id: 123,
+                        seller_id: 456,
+                        amount: 5000,
+                        currency: 'bkc',
+                        status: 'pending',
+                        created_at: new Date().toISOString()
+                    },
+                    {
+                        id: 'escrow_2',
+                        listing_id: 'listing_2',
+                        buyer_id: 789,
+                        seller_id: 456,
+                        amount: 3000,
+                        currency: 'bkc',
+                        status: 'completed',
+                        created_at: new Date(Date.now() - 86400000).toISOString(),
+                        completed_at: new Date(Date.now() - 43200000).toISOString()
+                    }
+                ];
+                
+                escrowTransactions = mockEscrow;
+                renderEscrow();
+            } catch (error) {
+                console.error('Error loading escrow:', error);
+            }
+        }
+
+        // Render escrow transactions
+        function renderEscrow() {
+            const container = document.getElementById('escrowGrid');
+            container.innerHTML = '';
+            
+            escrowTransactions.forEach(transaction => {
+                const card = createEscrowCard(transaction);
+                container.appendChild(card);
+            });
+        }
+
+        // Create escrow card
+        function createEscrowCard(transaction) {
+            const card = document.createElement('div');
+            card.className = 'bg-gray-800 rounded-lg p-6 text-white';
+            
+            const statusClass = `status-${transaction.status}`;
+            const statusText = transaction.status === 'pending' ? 'Ожидает' : 
+                              transaction.status === 'completed' ? 'Завершена' : 'Спор';
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold">Escrow ${transaction.id}</h3>
+                    <span class="escrow-status ${statusClass}">${statusText}</span>
+                </div>
+                <div class="space-y-2 text-sm mb-4">
+                    <div class="flex justify-between">
+                        <span>Сумма:</span>
+                        <span class="font-bold">${transaction.amount.toLocaleString()} ${transaction.currency.toUpperCase()}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Покупатель:</span>
+                        <span>ID ${transaction.buyer_id}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Продавец:</span>
+                        <span>ID ${transaction.seller_id}</span>
+                    </div>
+                </div>
+                ${transaction.completed_at ? 
+                    `<div class="text-xs text-gray-400">
+                        Завершено: ${new Date(transaction.completed_at).toLocaleString()}
+                    </div>` : 
+                    `<div class="text-xs text-gray-400">
+                        Создано: ${new Date(transaction.created_at).toLocaleString()}
+                    </div>`
+                }
+            `;
+            
+            return card;
+        }
+
+        // Load user ratings
+        async function loadRatings() {
+            try {
+                // TODO: Implement ratings list API
+                const mockRatings = [
+                    {
+                        id: 'rating_1',
+                        user_id: 123,
+                        rating: 5,
+                        review: 'Отличный продавец, быстрая доставка!',
+                        from_user_id: 456,
+                        transaction_id: 'escrow_1',
+                        created_at: new Date().toISOString()
+                    },
+                    {
+                        id: 'rating_2',
+                        user_id: 456,
+                        rating: 4,
+                        review: 'Хороший покупатель, все прошло хорошо',
+                        from_user_id: 789,
+                        transaction_id: 'escrow_2',
+                        created_at: new Date(Date.now() - 86400000).toISOString()
+                    }
+                ];
+                
+                userRatings = mockRatings;
+                renderRatings();
+            } catch (error) {
+                console.error('Error loading ratings:', error);
+            }
+        }
+
+        // Render user ratings
+        function renderRatings() {
+            const container = document.getElementById('ratingsGrid');
+            container.innerHTML = '';
+            
+            userRatings.forEach(rating => {
+                const card = createRatingCard(rating);
+                container.appendChild(card);
+            });
+        }
+
+        // Create rating card
+        function createRatingCard(rating) {
+            const card = document.createElement('div');
+            card.className = 'bg-gray-800 rounded-lg p-6 text-white';
+            
+            const stars = '★'.repeat(rating.rating) + '☆'.repeat(5 - rating.rating);
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold">Пользователь ID ${rating.user_id}</h3>
+                    <div class="text-yellow-400">${stars}</div>
+                </div>
+                <p class="text-gray-300 text-sm mb-4">${rating.review}</p>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span>От кого:</span>
+                        <span>ID ${rating.from_user_id}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Транзакция:</span>
+                        <span>${rating.transaction_id}</span>
+                    </div>
+                </div>
+                <div class="text-xs text-gray-400 mt-4">
+                    ${new Date(rating.created_at).toLocaleString()}
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Search and filter handlers
+        document.getElementById('searchListing').addEventListener('input', renderListings);
+        document.getElementById('filterType').addEventListener('change', renderListings);
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+        });
+    </script>
+</body>
+</html>

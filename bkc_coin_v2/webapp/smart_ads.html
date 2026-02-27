@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BKC Coin - Умная Реклама</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0e1a, #141925);
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(26, 31, 46, 0.9);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #3cd6c6;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(60, 214, 198, 0.2);
+        }
+
+        .section h2 {
+            color: #22d3ee;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .trigger-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .trigger-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3cd6c6;
+        }
+
+        .trigger-item h3 {
+            color: #3cd6c6;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .trigger-item p {
+            color: #94a3b8;
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+
+        .reward {
+            color: #feca57;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .demo-section {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .demo-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .demo-btn {
+            background: linear-gradient(135deg, #3cd6c6, #22d3ee);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .demo-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(60, 214, 198, 0.4);
+        }
+
+        .demo-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3cd6c6;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .ad-preview {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #3cd6c6, #22d3ee);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(60, 214, 198, 0.3);
+            z-index: 1000;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            animation: slideInRight 0.5s ease;
+        }
+
+        .ad-preview:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(60, 214, 198, 0.4);
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border-radius: 12px;
+            padding: 16px 24px;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            z-index: 10000;
+            animation: slideInTop 0.5s ease;
+        }
+
+        @keyframes slideInTop {
+            from {
+                transform: translate(-50%, -100%);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, 0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 BKC Coin - Умная Реклама</h1>
+
+        <div class="section">
+            <h2>🎯 Умные Триггеры</h2>
+            <p>Реклама показывается только когда пользователю это выгодно:</p>
+            
+            <div class="trigger-list">
+                <div class="trigger-item">
+                    <h3>⚡ Энергия закончилась</h3>
+                    <p>Когда у пользователя заканчивается энергия</p>
+                    <p class="reward">Награда: +500 энергии</p>
+                </div>
+                
+                <div class="trigger-item">
+                    <h3>🎁 Ежедневный бонус</h3>
+                    <p>После получения ежедневного бонуса</p>
+                    <p class="reward">Награда: +50 BKC</p>
+                </div>
+                
+                <div class="trigger-item">
+                    <h3>🏆 Достижение разблокировано</h3>
+                    <p>При получении нового достижения</p>
+                    <p class="reward">Награда: +25 BKC</p>
+                </div>
+                
+                <div class="trigger-item">
+                    <h3>📈 Новый уровень</h3>
+                    <p>При повышении уровня (без награды)</p>
+                    <p class="reward">Награда: Прогресс сохранен</p>
+                </div>
+                
+                <div class="trigger-item">
+                    <h3>🏆 Вход в турнир</h3>
+                    <p>При попытке войти в платный турнир</p>
+                    <p class="reward">Награда: Бесплатный вход</p>
+                </div>
+                
+                <div class="trigger-item">
+                    <h3>🎨 Покупка NFT</h3>
+                    <p>При покупке NFT предмета</p>
+                    <p class="reward">Награда: 10% скидка</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Статистика Рекламы</h2>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="adsToday">0</div>
+                    <div class="stat-label">Реклам сегодня</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalAds">0</div>
+                    <div class="stat-label">Всего рекламы</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="completedAds">0</div>
+                    <div class="stat-label">Завершено</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalRewards">0</div>
+                    <div class="stat-label">Всего наград</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎮 Демонстрация</h2>
+            <p>Попробуйте умные триггеры рекламы:</p>
+            
+            <div class="demo-section">
+                <div class="demo-buttons">
+                    <button class="demo-btn" onclick="simulateEnergyDepleted()">
+                        ⚡ Энергия закончилась
+                    </button>
+                    <button class="demo-btn" onclick="simulateAchievement()">
+                        🎁 Новое достижение
+                    </button>
+                    <button class="demo-btn" onclick="simulateDailyBonus()">
+                        💰 Ежедневный бонус
+                    </button>
+                    <button class="demo-btn" onclick="simulateTournamentEntry()">
+                        🏆 Вход в турнир
+                    </button>
+                    <button class="demo-btn" onclick="simulateNFTPurchase()">
+                        🎨 Покупка NFT
+                    </button>
+                    <button class="demo-btn" onclick="simulateLevelUp()">
+                        📈 Новый уровень
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>✨ Преимущества Подхода</h2>
+            <ul style="color: #94a3b8; line-height: 1.6;">
+                <li><strong>Не навязчиво:</strong> Реклама появляется только когда пользователю это выгодно</li>
+                <li><strong>Выгодно для юзера:</strong> Каждый просмотр приносит реальную пользу</li>
+                <li><strong>Умные триггеры:</strong> Реклама показывается в правильные моменты</li>
+                <li><strong>Контролируемо:</strong> Пользователь сам решает смотреть или нет</li>
+                <li><strong>Высокая конверсия:</strong> Юзеры охотно смотрят рекламу за награды</li>
+                <li><strong>Лояльность:</strong> Пользователи ценят возможность получить бонусы</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Mock ads manager for demonstration
+        class MockAdsManager {
+            constructor() {
+                this.stats = {
+                    ads_today: 0,
+                    total_ads: 0,
+                    completed_ads: 0,
+                    total_rewards: 0
+                };
+                this.updateStatsDisplay();
+            }
+
+            updateStatsDisplay() {
+                document.getElementById('adsToday').textContent = this.stats.ads_today;
+                document.getElementById('totalAds').textContent = this.stats.total_ads;
+                document.getElementById('completedAds').textContent = this.stats.completed_ads;
+                document.getElementById('totalRewards').textContent = this.stats.total_rewards;
+            }
+
+            showEnergyAd() {
+                this.createEnergyButton();
+                this.stats.ads_today++;
+                this.stats.total_ads++;
+                this.updateStatsDisplay();
+            }
+
+            createEnergyButton() {
+                const existingBtn = document.querySelector('.energy-restore-btn');
+                if (existingBtn) existingBtn.remove();
+
+                const button = document.createElement('button');
+                button.className = 'energy-restore-btn';
+                button.innerHTML = `
+                    <div class="btn-content">
+                        <span class="icon">⚡</span>
+                        <span class="text">Восстановить энергию (500)</span>
+                        <span class="subtext">Посмотреть рекламу</span>
+                    </div>
+                `;
+
+                button.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    background: linear-gradient(135deg, #3cd6c6, #22d3ee);
+                    color: white;
+                    border: none;
+                    border-radius: 12px;
+                    padding: 12px 20px;
+                    cursor: pointer;
+                    box-shadow: 0 4px 15px rgba(60, 214, 198, 0.3);
+                    z-index: 1000;
+                    font-family: 'Inter', sans-serif;
+                    font-weight: 500;
+                    transition: all 0.3s ease;
+                    animation: slideInRight 0.5s ease;
+                `;
+
+                button.addEventListener('click', () => {
+                    this.completeAd('energy', 500);
+                    button.remove();
+                });
+
+                document.body.appendChild(button);
+
+                // Auto-hide after 10 seconds
+                setTimeout(() => {
+                    if (button.parentNode) {
+                        button.style.animation = 'slideOutRight 0.5s ease';
+                        setTimeout(() => button.remove(), 500);
+                    }
+                }, 10000);
+            }
+
+            showAchievementBonus() {
+                this.createAchievementOption();
+                this.stats.ads_today++;
+                this.stats.total_ads++;
+                this.updateStatsDisplay();
+            }
+
+            createAchievementOption() {
+                const option = document.createElement('div');
+                option.className = 'achievement-bonus-option';
+                option.innerHTML = `
+                    <div class="bonus-content">
+                        <span class="icon">🎁</span>
+                        <span class="text">Увеличить награду за достижение</span>
+                        <span class="reward">+25 BKC</span>
+                        <button class="watch-ad-btn">Посмотреть рекламу</button>
+                    </div>
+                `;
+
+                option.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: linear-gradient(135deg, #0891b2, #06b6d4);
+                    color: white;
+                    border-radius: 16px;
+                    padding: 20px;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                    z-index: 10000;
+                    text-align: center;
+                    animation: achievementPop 0.5s ease;
+                `;
+
+                const watchBtn = option.querySelector('.watch-ad-btn');
+                watchBtn.addEventListener('click', () => {
+                    this.completeAd('achievement', 25);
+                    option.remove();
+                });
+
+                setTimeout(() => {
+                    if (option.parentNode) {
+                        option.style.animation = 'fadeOut 0.5s ease';
+                        setTimeout(() => option.remove(), 500);
+                    }
+                }, 8000);
+
+                document.body.appendChild(option);
+            }
+
+            completeAd(type, reward) {
+                this.stats.completed_ads++;
+                this.stats.total_rewards += reward;
+                this.updateStatsDisplay();
+                this.showRewardNotification(type, reward);
+            }
+
+            showRewardNotification(type, reward) {
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+                
+                let rewardText = '';
+                switch (type) {
+                    case 'energy':
+                        rewardText = `⚡ +${reward} энергии`;
+                        break;
+                    case 'achievement':
+                        rewardText = `💰 +${reward} BKC`;
+                        break;
+                    default:
+                        rewardText = `🎁 Награда получена!`;
+                }
+
+                notification.innerHTML = `
+                    <div class="notification-content">
+                        <span class="reward-text">${rewardText}</span>
+                        <span class="thank-you">Спасибо за просмотр рекламы!</span>
+                    </div>
+                `;
+
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    notification.style.animation = 'slideOutTop 0.5s ease';
+                    setTimeout(() => notification.remove(), 500);
+                }, 3000);
+            }
+        }
+
+        // Initialize mock ads manager
+        const mockAdsManager = new MockAdsManager();
+
+        // Demo functions
+        function simulateEnergyDepleted() {
+            mockAdsManager.showEnergyAd();
+        }
+
+        function simulateAchievement() {
+            mockAdsManager.showAchievementBonus();
+        }
+
+        function simulateDailyBonus() {
+            mockAdsManager.showAchievementBonus(); // Similar to achievement
+        }
+
+        function simulateTournamentEntry() {
+            mockAdsManager.showAchievementBonus(); // Similar pattern
+        }
+
+        function simulateNFTPurchase() {
+            mockAdsManager.showAchievementBonus(); // Similar pattern
+        }
+
+        function simulateLevelUp() {
+            // Show interstitial (no reward)
+            alert('Interstitial ad would show here (no reward)');
+        }
+
+        // Add animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideOutRight {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+
+            @keyframes achievementPop {
+                0% {
+                    transform: translate(-50%, -50%) scale(0);
+                    opacity: 0;
+                }
+                50% {
+                    transform: translate(-50%, -50%) scale(1.1);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translate(-50%, -50%) scale(1);
+                    opacity: 1;
+                }
+            }
+
+            @keyframes fadeOut {
+                from {
+                    opacity: 1;
+                }
+                to {
+                    opacity: 0;
+                }
+            }
+
+            @keyframes slideOutTop {
+                from {
+                    transform: translate(-50%, 0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translate(-50%, -100%);
+                    opacity: 0;
+                }
+            }
+
+            .energy-restore-btn .btn-content {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .energy-restore-btn .icon {
+                font-size: 1.2em;
+            }
+
+            .energy-restore-btn .text {
+                font-weight: 600;
+            }
+
+            .energy-restore-btn .subtext {
+                font-size: 0.8em;
+                opacity: 0.9;
+            }
+
+            .achievement-bonus-option .bonus-content {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .achievement-bonus-option .icon {
+                font-size: 2em;
+            }
+
+            .achievement-bonus-option .reward {
+                font-weight: bold;
+                font-size: 1.1em;
+            }
+
+            .watch-ad-btn {
+                background: rgba(255, 255, 255, 0.2);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                color: white;
+                border-radius: 8px;
+                padding: 8px 16px;
+                cursor: pointer;
+                font-weight: 500;
+                transition: all 0.3s ease;
+            }
+
+            .watch-ad-btn:hover {
+                background: rgba(255, 255, 255, 0.3);
+                transform: translateY(-1px);
+            }
+
+            .notification .notification-content {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+            }
+
+            .notification .reward-text {
+                font-weight: 600;
+                font-size: 1.1em;
+            }
+
+            .notification .thank-you {
+                font-size: 0.9em;
+                opacity: 0.9;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BKC Реферальная система</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .referral-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+            transition: width 0.5s ease;
+        }
+        
+        .referral-link {
+            background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+            transition: all 0.3s ease;
+        }
+        
+        .referral-link:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        .bonus-notification {
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Animated Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute w-96 h-96 bg-purple-600 rounded-full opacity-10 blur-3xl -top-48 -left-48"></div>
+        <div class="absolute w-96 h-96 bg-blue-600 rounded-full opacity-10 blur-3xl -bottom-48 -right-48"></div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 relative z-10">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-5xl font-bold mb-4 bg-gradient-to-r from-green-400 to-blue-600 bg-clip-text text-transparent">
+                <i class="fas fa-users mr-4"></i>РЕФЕРАЛЬНАЯ СИСТЕМА
+            </h1>
+            <p class="text-xl text-gray-300">Приглашай друзей и получай 300 BKC за каждую четверку активных!</p>
+        </header>
+
+        <!-- Main Content -->
+        <div class="referral-container rounded-2xl p-8 max-w-4xl mx-auto">
+            
+            <!-- Referral Link Section -->
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold mb-4 text-cyan-400">
+                    <i class="fas fa-link mr-2"></i>Ваша реферальная ссылка
+                </h2>
+                <div class="flex items-center space-x-4">
+                    <input type="text" id="referralLink" readonly 
+                           value="https://t.me/bkc_coin_bot?start=REF123456" 
+                           class="flex-1 bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500 focus:ring-opacity-50">
+                    <button onclick="copyReferralLink()" 
+                            class="referral-link px-6 py-3 text-white font-bold rounded-lg">
+                        <i class="fas fa-copy mr-2"></i>Копировать
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="stat-card rounded-xl p-6 text-center">
+                    <div class="text-3xl font-bold text-blue-400 mb-2" id="totalReferrals">0</div>
+                    <div class="text-gray-300">Всего рефералов</div>
+                </div>
+                
+                <div class="stat-card rounded-xl p-6 text-center">
+                    <div class="text-3xl font-bold text-green-400 mb-2" id="activeReferrals">0</div>
+                    <div class="text-gray-300">Активных (≥50 BKC)</div>
+                </div>
+                
+                <div class="stat-card rounded-xl p-6 text-center">
+                    <div class="text-3xl font-bold text-yellow-400 mb-2" id="pendingReferrals">0</div>
+                    <div class="text-gray-300">Ожидают бонуса</div>
+                </div>
+                
+                <div class="stat-card rounded-xl p-6 text-center">
+                    <div class="text-3xl font-bold text-purple-400 mb-2" id="totalBonus">0</div>
+                    <div class="text-gray-300">BKC заработано</div>
+                </div>
+            </div>
+
+            <!-- Progress to Next Bonus -->
+            <div class="mb-8">
+                <h3 class="text-xl font-bold mb-4 text-yellow-400">
+                    <i class="fas fa-trophy mr-2"></i>Прогресс до следующего бонуса
+                </h3>
+                <div class="bg-gray-700 rounded-full h-8 overflow-hidden">
+                    <div class="progress-bar h-full flex items-center justify-center text-white font-bold" 
+                         id="progressBar" style="width: 0%">
+                        <span id="progressText">0/4 активных</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Referrals List -->
+            <div>
+                <h3 class="text-xl font-bold mb-4 text-cyan-400">
+                    <i class="fas fa-list mr-2"></i>Ваши рефералы
+                </h3>
+                <div class="bg-gray-800 rounded-lg overflow-hidden" id="referralsList">
+                    <div class="p-8 text-center text-gray-400">
+                        <i class="fas fa-user-friends text-4xl mb-4"></i>
+                        <p>У вас пока нет рефералов</p>
+                        <p class="text-sm mt-2">Приглашайте друзей по ссылке выше!</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bonus Notifications -->
+        <div id="bonusNotifications" class="fixed top-4 right-4 space-y-2 z-50">
+            <!-- Notifications will appear here -->
+        </div>
+    </div>
+
+    <script>
+        // Динамическое получение user ID
+        function getUserId() {
+            // Приоритет: Telegram WebApp > localStorage > временный ID
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+                return window.Telegram.WebApp.initDataUnsafe.user.id;
+            }
+            
+            const storedId = localStorage.getItem('bkc_user_id');
+            if (storedId) {
+                return parseInt(storedId);
+            }
+            
+            // Временный ID для демонстрации
+            const tempId = localStorage.getItem('temp_user_id');
+            if (tempId) {
+                return parseInt(tempId);
+            }
+            
+            return 123456789; // fallback
+        }
+
+        let currentUserId = getUserId();
+
+        // Загрузка статистики рефералов
+        async function loadReferralStats() {
+            try {
+                const response = await fetch(`/api/v1/referral/stats?user_id=${currentUserId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateStats(result.data);
+                    updateReferralsList(result.data.referrals || []);
+                }
+            } catch (error) {
+                console.error('Failed to load referral stats:', error);
+            }
+        }
+
+        // Обновление статистики
+        function updateStats(data) {
+            document.getElementById('totalReferrals').textContent = data.total_referrals || 0;
+            document.getElementById('activeReferrals').textContent = data.active_referrals || 0;
+            document.getElementById('pendingReferrals').textContent = data.pending_referrals || 0;
+            document.getElementById('totalBonus').textContent = data.referral_bonus_earned || 0;
+            
+            // Обновление прогресса
+            const pending = data.pending_referrals || 0;
+            const progress = Math.min((pending / 4) * 100, 100);
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressText').textContent = `${pending}/4 активных`;
+        }
+
+        // Обновление списка рефералов
+        function updateReferralsList(referrals) {
+            const listContainer = document.getElementById('referralsList');
+            
+            if (referrals.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="p-8 text-center text-gray-400">
+                        <i class="fas fa-user-friends text-4xl mb-4"></i>
+                        <p>У вас пока нет рефералов</p>
+                        <p class="text-sm mt-2">Приглашайте друзей по ссылке выше!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            referrals.forEach(referral => {
+                const statusClass = referral.is_active ? 'text-green-400' : 'text-yellow-400';
+                const statusText = referral.is_active ? 'Активен' : 'Новый';
+                const paidBadge = referral.is_paid ? '<span class="ml-2 bg-purple-600 px-2 py-1 rounded text-xs">Оплачено</span>' : '';
+                
+                html += `
+                    <div class="flex items-center justify-between p-4 border-b border-gray-700 hover:bg-gray-700 transition-colors">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div>
+                                <div class="font-semibold">ID: ${referral.referral_id}</div>
+                                <div class="text-sm ${statusClass}">${statusText}${paidBadge}</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm text-gray-400">Создан: ${new Date(referral.created_at).toLocaleDateString()}</div>
+                            ${referral.activated_at ? `<div class="text-sm text-green-400">Активирован: ${new Date(referral.activated_at).toLocaleDateString()}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            listContainer.innerHTML = html;
+        }
+
+        // Копирование реферальной ссылки
+        function copyReferralLink() {
+            const input = document.getElementById('referralLink');
+            input.select();
+            document.execCommand('copy');
+            
+            showNotification('Ссылка скопирована!', 'success');
+        }
+
+        // Показ уведомлений
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('bonusNotifications');
+            const notification = document.createElement('div');
+            
+            const bgColor = type === 'success' ? 'bg-green-600' : 
+                           type === 'error' ? 'bg-red-600' : 'bg-blue-600';
+            
+            notification.className = `bonus-notification ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} mr-2"></i>
+                ${message}
+            `;
+            
+            container.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Симуляция получения бонуса (для демонстрации)
+        function simulateBonus() {
+            showNotification('🎉 Красава! Четверка активна, лови 300 BKC!', 'success');
+            loadReferralStats(); // Перезагружаем статистику
+        }
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            loadReferralStats();
+            
+            // Обновление статистики каждые 30 секунд
+            setInterval(loadReferralStats, 30000);
+        });
+
+        // Обработка сообщений от Telegram WebApp
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            
+            // Слушаем сообщения о бонусах
+            window.Telegram.WebApp.onEvent('viewportChanged', function() {
+                // Обработка изменений viewport
+            });
+        }
+    </script>
+</body>
+</html>

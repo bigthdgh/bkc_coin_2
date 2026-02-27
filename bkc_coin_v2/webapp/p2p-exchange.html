@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BKC P2P Exchange - Trade BKC ↔ TON</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <style>
+        .glass-morphism {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .neon-glow {
+            text-shadow: 0 0 10px rgba(147, 51, 234, 0.8),
+                         0 0 20px rgba(147, 51, 234, 0.6),
+                         0 0 30px rgba(147, 51, 234, 0.4);
+        }
+        .exchange-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .exchange-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg);
+            transition: all 0.5s;
+        }
+        .exchange-card:hover::before {
+            animation: shimmer 0.5s ease-in-out;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        .exchange-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(147, 51, 234, 0.3);
+        }
+        .ton-connect-btn {
+            background: linear-gradient(45deg, #0088cc, #0066aa);
+            transition: all 0.3s ease;
+        }
+        .ton-connect-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0, 136, 204, 0.3);
+        }
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        .rate-badge {
+            background: linear-gradient(45deg, #10b981, #059669);
+            animation: ratePulse 3s infinite;
+        }
+        @keyframes ratePulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.6); }
+        }
+        .status-pending { background: linear-gradient(45deg, #f59e0b, #d97706); }
+        .status-active { background: linear-gradient(45deg, #10b981, #059669); }
+        .status-completed { background: linear-gradient(45deg, #3b82f6, #2563eb); }
+        .status-disputed { background: linear-gradient(45deg, #ef4444, #dc2626); }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Animated Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute w-96 h-96 bg-purple-600 rounded-full opacity-10 blur-3xl -top-48 -left-48 pulse-animation"></div>
+        <div class="absolute w-96 h-96 bg-blue-600 rounded-full opacity-10 blur-3xl -bottom-48 -right-48 pulse-animation" style="animation-delay: 1s;"></div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 relative z-10">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-6xl font-bold neon-glow mb-4">
+                <i class="fas fa-exchange-alt mr-4"></i>BKC P2P EXCHANGE
+            </h1>
+            <p class="text-xl text-gray-300">Direct BKC ↔ TON Trading with TonConnect</p>
+        </header>
+
+        <!-- Current Rates Display -->
+        <div class="mb-8">
+            <div class="exchange-card rounded-2xl p-8 text-center text-white relative">
+                <div class="relative z-10">
+                    <div class="mb-6">
+                        <i class="fas fa-chart-line text-6xl text-yellow-400 animate-bounce"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold mb-4">REAL-TIME EXCHANGE RATES</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <div class="text-sm text-gray-300 mb-2">Market Rate</div>
+                            <div class="text-3xl font-bold" id="marketRate">200.00</div>
+                            <div class="text-sm text-gray-400">BKC per TON</div>
+                        </div>
+                        <div>
+                            <div class="text-sm text-gray-300 mb-2">Minimum Rate</div>
+                            <div class="text-3xl font-bold text-green-400" id="minRate">140.00</div>
+                            <div class="text-sm text-gray-400">70% of market</div>
+                        </div>
+                        <div>
+                            <div class="text-sm text-gray-300 mb-2">Service Fee</div>
+                            <div class="text-3xl font-bold text-purple-400">5%</div>
+                            <div class="text-sm text-gray-400">To your wallet</div>
+                        </div>
+                    </div>
+                    <div class="mt-6 text-sm text-gray-300">
+                        <i class="fas fa-wallet mr-2"></i>
+                        Fee Wallet: <span id="feeWallet" class="font-mono">EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TonConnect Connection -->
+        <div class="mb-8 text-center">
+            <div id="tonConnectButton" class="ton-connect-btn inline-block px-8 py-4 rounded-xl text-white font-bold text-lg">
+                <i class="fas fa-link mr-3"></i>CONNECT TON WALLET
+            </div>
+            <div id="walletInfo" class="hidden mt-4 glass-morphism rounded-xl p-4 inline-block">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-wallet text-2xl text-green-400"></i>
+                    <div>
+                        <div class="font-bold" id="walletAddress">Connected Wallet</div>
+                        <div class="text-sm text-gray-400" id="walletBalance">Balance: 0 TON</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Offer Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Sell BKC for TON -->
+            <div class="glass-morphism rounded-2xl p-6">
+                <h3 class="text-2xl font-bold mb-6 text-green-400">
+                    <i class="fas fa-arrow-up mr-2"></i>SELL BKC FOR TON
+                </h3>
+                <form id="sellBKCForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Amount BKC</label>
+                        <input type="number" id="sellAmountBKC" placeholder="10000" required
+                            class="w-full px-4 py-3 bg-gray-800 border border-green-500 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Amount TON (you'll receive)</label>
+                        <input type="number" id="sellAmountTON" readonly
+                            class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Rate (BKC per TON)</label>
+                        <input type="number" id="sellRate" step="0.01" min="140" placeholder="200.00" required
+                            class="w-full px-4 py-3 bg-gray-800 border border-green-500 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Your TON Address</label>
+                        <input type="text" id="sellerTonAddress" placeholder="EQ..." required
+                            class="w-full px-4 py-3 bg-gray-800 border border-green-500 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-mono text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Description (optional)</label>
+                        <textarea id="sellDescription" rows="2"
+                            class="w-full px-4 py-3 bg-gray-800 border border-green-500 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            placeholder="Fast exchange, trusted trader..."></textarea>
+                    </div>
+                    <button type="submit"
+                        class="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all transform hover:scale-105 text-lg">
+                        <i class="fas fa-plus-circle mr-3"></i>CREATE SELL OFFER
+                    </button>
+                </form>
+            </div>
+
+            <!-- Buy BKC with TON -->
+            <div class="glass-morphism rounded-2xl p-6">
+                <h3 class="text-2xl font-bold mb-6 text-blue-400">
+                    <i class="fas fa-arrow-down mr-2"></i>BUY BKC WITH TON
+                </h3>
+                <form id="buyBKCForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Amount TON</label>
+                        <input type="number" id="buyAmountTON" placeholder="50" required
+                            class="w-full px-4 py-3 bg-gray-800 border border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Amount BKC (you'll receive)</label>
+                        <input type="number" id="buyAmountBKC" readonly
+                            class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Rate (BKC per TON)</label>
+                        <input type="number" id="buyRate" step="0.01" min="140" placeholder="200.00" required
+                            class="w-full px-4 py-3 bg-gray-800 border border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Your TON Address</label>
+                        <input type="text" id="buyerTonAddress" placeholder="EQ..." required
+                            class="w-full px-4 py-3 bg-gray-800 border border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Description (optional)</label>
+                        <textarea id="buyDescription" rows="2"
+                            class="w-full px-4 py-3 bg-gray-800 border border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Need BKC urgently, reliable trader..."></textarea>
+                    </div>
+                    <button type="submit"
+                        class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all transform hover:scale-105 text-lg">
+                        <i class="fas fa-plus-circle mr-3"></i>CREATE BUY OFFER
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Active Offers -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold mb-6 text-purple-400">
+                <i class="fas fa-list mr-2"></i>ACTIVE OFFERS
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Filter by Type</label>
+                    <select id="typeFilter" class="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg">
+                        <option value="">All Types</option>
+                        <option value="bkc_to_ton">📈 Sell BKC for TON</option>
+                        <option value="ton_to_bkc">📉 Buy BKC with TON</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Sort by</label>
+                    <select id="sortBy" class="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg">
+                        <option value="created_desc">📅 Newest</option>
+                        <option value="rate_desc">💰 Best Rate</option>
+                        <option value="amount_desc">📊 Largest Amount</option>
+                    </select>
+                </div>
+            </div>
+            <div id="offersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Offers will be loaded here -->
+            </div>
+        </div>
+
+        <!-- My Exchanges -->
+        <div class="glass-morphism rounded-2xl p-6">
+            <h2 class="text-2xl font-bold mb-6 text-purple-400">
+                <i class="fas fa-history mr-2"></i>MY EXCHANGES
+            </h2>
+            <div id="myExchangesList" class="space-y-4">
+                <!-- Exchanges will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Exchange Modal -->
+    <div id="exchangeModal" class="fixed inset-0 bg-black bg-opacity-75 hidden flex items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-2xl p-8 max-w-2xl w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-purple-400">
+                    <i class="fas fa-exchange-alt mr-2"></i>EXECUTE EXCHANGE
+                </h3>
+                <button onclick="hideExchangeModal()" class="text-gray-400 hover:text-white text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="exchangeDetails" class="space-y-6">
+                <!-- Exchange details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tonConnectUI = null;
+        let currentRates = { bkc_usd: 1000, ton_usd: 5, bkc_ton: 200 };
+        let offers = [];
+        let myExchanges = [];
+
+        // Initialize TonConnect
+        function initTonConnect() {
+            tonConnectUI = new TonConnectUI({
+                manifestUrl: 'https://your-domain.com/tonconnect-manifest.json',
+                buttonRootId: 'tonConnectButton'
+            });
+
+            tonConnectUI.onStatusChange(wallet => {
+                if (wallet) {
+                    document.getElementById('tonConnectButton').classList.add('hidden');
+                    document.getElementById('walletInfo').classList.remove('hidden');
+                    document.getElementById('walletAddress').textContent = 
+                        wallet.account.address.slice(0, 6) + '...' + wallet.account.address.slice(-4);
+                    // TODO: Get balance from TON API
+                    document.getElementById('walletBalance').textContent = 'Balance: 0 TON';
+                } else {
+                    document.getElementById('tonConnectButton').classList.remove('hidden');
+                    document.getElementById('walletInfo').classList.add('hidden');
+                }
+            });
+        }
+
+        // Load current rates
+        async function loadCurrentRates() {
+            try {
+                const response = await fetch('/api/v1/p2p/exchange/rates');
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentRates = result.rates;
+                    document.getElementById('marketRate').textContent = currentRates.bkc_ton.toFixed(2);
+                    document.getElementById('minRate').textContent = result.min_bkc_ton_rate.toFixed(2);
+                    document.getElementById('feeWallet').textContent = result.fee_wallet;
+                }
+            } catch (error) {
+                console.error('Error loading rates:', error);
+            }
+        }
+
+        // Load offers
+        async function loadOffers() {
+            try {
+                const type = document.getElementById('typeFilter').value;
+                const sort = document.getElementById('sortBy').value;
+                
+                let url = '/api/v1/p2p/exchange/offers?';
+                if (type) url += `type=${type}&`;
+                if (sort) url += `sort=${sort}&`;
+                
+                const response = await fetch(url.slice(0, -1));
+                const result = await response.json();
+                
+                if (result.success) {
+                    offers = result.offers;
+                    renderOffers();
+                }
+            } catch (error) {
+                console.error('Error loading offers:', error);
+                // Mock data for demo
+                offers = [
+                    {
+                        id: 'offer_1',
+                        user_id: 123,
+                        type: 'bkc_to_ton',
+                        amount_bkc: 10000,
+                        amount_ton: 50,
+                        rate: 200,
+                        status: 'active',
+                        description: 'Fast exchange, trusted trader',
+                        ton_address: 'EQD...',
+                        created_at: new Date().toISOString()
+                    },
+                    {
+                        id: 'offer_2',
+                        user_id: 456,
+                        type: 'ton_to_bkc',
+                        amount_bkc: 15000,
+                        amount_ton: 75,
+                        rate: 200,
+                        status: 'active',
+                        description: 'Need BKC urgently',
+                        ton_address: 'EQB...',
+                        created_at: new Date(Date.now() - 3600000).toISOString()
+                    }
+                ];
+                renderOffers();
+            }
+        }
+
+        // Render offers
+        function renderOffers() {
+            const container = document.getElementById('offersList');
+            container.innerHTML = '';
+            
+            offers.forEach(offer => {
+                const card = createOfferCard(offer);
+                container.appendChild(card);
+            });
+            
+            if (offers.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-400 col-span-full text-xl">📭 No active offers</p>';
+            }
+        }
+
+        // Create offer card
+        function createOfferCard(offer) {
+            const card = document.createElement('div');
+            card.className = 'exchange-card rounded-xl p-6 text-white cursor-pointer';
+            card.onclick = () => showExchangeModal(offer);
+            
+            const typeIcon = offer.type === 'bkc_to_ton' ? 'fa-arrow-up' : 'fa-arrow-down';
+            const typeColor = offer.type === 'bkc_to_ton' ? 'text-green-400' : 'text-blue-400';
+            const typeText = offer.type === 'bkc_to_ton' ? 'Sell BKC' : 'Buy BKC';
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas ${typeIcon} text-2xl ${typeColor}"></i>
+                        <div>
+                            <span class="text-sm bg-purple-600 px-2 py-1 rounded-full">${typeText}</span>
+                        </div>
+                    </div>
+                    <div class="rate-badge px-3 py-1 rounded-lg text-white text-sm font-bold">
+                        ${offer.rate.toFixed(2)} BKC/TON
+                    </div>
+                </div>
+                <h3 class="text-lg font-bold mb-3">${offer.amount_bkc.toLocaleString()} BKC ↔ ${offer.amount_ton.toFixed(2)} TON</h3>
+                <p class="text-gray-300 text-sm mb-4">${offer.description || 'No description'}</p>
+                <div class="flex justify-between items-center text-xs text-gray-400">
+                    <div>
+                        <div>Seller: ID ${offer.user_id}</div>
+                        <div>${new Date(offer.created_at).toLocaleDateString()}</div>
+                    </div>
+                    <div class="status-active px-2 py-1 rounded text-white text-xs font-bold">
+                        ACTIVE
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Show exchange modal
+        function showExchangeModal(offer) {
+            const modal = document.getElementById('exchangeModal');
+            const details = document.getElementById('exchangeDetails');
+            
+            const typeText = offer.type === 'bkc_to_ton' ? 'Buy BKC with TON' : 'Sell BKC for TON';
+            const feeTON = offer.amount_ton * 0.05; // 5% fee
+            const totalTON = offer.amount_ton + feeTON;
+            
+            details.innerHTML = `
+                <div class="space-y-6">
+                    <div class="text-center">
+                        <h4 class="text-xl font-bold mb-2">${typeText}</h4>
+                        <div class="text-3xl font-bold text-purple-400">
+                            ${offer.amount_bkc.toLocaleString()} BKC ↔ ${offer.amount_ton.toFixed(2)} TON
+                        </div>
+                        <div class="text-lg text-gray-400 mt-2">
+                            Rate: ${offer.rate.toFixed(2)} BKC/TON
+                        </div>
+                    </div>
+                    
+                    <div class="glass-morphism rounded-xl p-4">
+                        <h5 class="font-bold mb-3">Exchange Details</h5>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span>Amount BKC:</span>
+                                <span class="font-bold">${offer.amount_bkc.toLocaleString()} BKC</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Amount TON:</span>
+                                <span class="font-bold">${offer.amount_ton.toFixed(2)} TON</span>
+                            </div>
+                            <div class="flex justify-between text-purple-400">
+                                <span>Service Fee (5%):</span>
+                                <span class="font-bold">${feeTON.toFixed(2)} TON</span>
+                            </div>
+                            <div class="flex justify-between text-lg font-bold border-t border-gray-600 pt-2">
+                                <span>Total TON to send:</span>
+                                <span class="text-green-400">${totalTON.toFixed(2)} TON</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-morphism rounded-xl p-4">
+                        <h5 class="font-bold mb-3">Seller Information</h5>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span>Seller ID:</span>
+                                <span class="font-bold">${offer.user_id}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>TON Address:</span>
+                                <span class="font-mono text-xs">${offer.ton_address}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-4">
+                        <button onclick="executeExchange('${offer.id}')" 
+                            class="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all transform hover:scale-105">
+                            <i class="fas fa-exchange-alt mr-2"></i>EXECUTE EXCHANGE
+                        </button>
+                        <button onclick="hideExchangeModal()" 
+                            class="flex-1 py-3 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-xl transition-all">
+                            <i class="fas fa-times mr-2"></i>CANCEL
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+
+        // Hide exchange modal
+        function hideExchangeModal() {
+            document.getElementById('exchangeModal').classList.add('hidden');
+        }
+
+        // Execute exchange
+        async function executeExchange(offerId) {
+            if (!tonConnectUI || !tonConnectUI.connected) {
+                alert('Please connect your TON wallet first');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/v1/p2p/exchange/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        offer_id: offerId,
+                        ton_address: tonConnectUI.account.address
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    hideExchangeModal();
+                    
+                    // Get TonConnect payload
+                    const payloadResponse = await fetch(`/api/v1/p2p/exchange/ton-connect?exchange_id=${result.exchange.id}`);
+                    const payloadResult = await payloadResponse.json();
+                    
+                    if (payloadResult.success) {
+                        // Execute TonConnect transaction
+                        const transaction = {
+                            messages: [
+                                {
+                                    address: payloadResult.payload.to,
+                                    amount: payloadResult.payload.amount,
+                                    payload: payloadResult.payload.payload
+                                }
+                            ]
+                        };
+                        
+                        await tonConnectUI.sendTransaction(transaction);
+                        alert('🎉 Exchange initiated! Please wait for confirmation.');
+                        loadMyExchanges();
+                    }
+                } else {
+                    alert('❌ Error: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        // Create offer handlers
+        document.getElementById('sellBKCForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const offerData = {
+                type: 'bkc_to_ton',
+                amount_bkc: parseFloat(document.getElementById('sellAmountBKC').value),
+                amount_ton: parseFloat(document.getElementById('sellAmountTON').value),
+                rate: parseFloat(document.getElementById('sellRate').value),
+                ton_address: document.getElementById('sellerTonAddress').value,
+                description: document.getElementById('sellDescription').value,
+                expires_hours: 24
+            };
+            
+            try {
+                const response = await fetch('/api/v1/p2p/exchange/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(offerData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('🎉 Sell offer created successfully!');
+                    document.getElementById('sellBKCForm').reset();
+                    loadOffers();
+                } else {
+                    alert('❌ Error: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        });
+
+        document.getElementById('buyBKCForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const offerData = {
+                type: 'ton_to_bkc',
+                amount_bkc: parseFloat(document.getElementById('buyAmountBKC').value),
+                amount_ton: parseFloat(document.getElementById('buyAmountTON').value),
+                rate: parseFloat(document.getElementById('buyRate').value),
+                ton_address: document.getElementById('buyerTonAddress').value,
+                description: document.getElementById('buyDescription').value,
+                expires_hours: 24
+            };
+            
+            try {
+                const response = await fetch('/api/v1/p2p/exchange/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(offerData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('🎉 Buy offer created successfully!');
+                    document.getElementById('buyBKCForm').reset();
+                    loadOffers();
+                } else {
+                    alert('❌ Error: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        });
+
+        // Load my exchanges
+        async function loadMyExchanges() {
+            try {
+                const response = await fetch('/api/v1/p2p/exchange/my');
+                const result = await response.json();
+                
+                if (result.success) {
+                    myExchanges = result.exchanges;
+                    renderMyExchanges();
+                }
+            } catch (error) {
+                console.error('Error loading my exchanges:', error);
+            }
+        }
+
+        // Render my exchanges
+        function renderMyExchanges() {
+            const container = document.getElementById('myExchangesList');
+            container.innerHTML = '';
+            
+            myExchanges.forEach(exchange => {
+                const item = document.createElement('div');
+                item.className = 'glass-morphism rounded-xl p-4';
+                
+                const statusClass = `status-${exchange.status}`;
+                const statusText = exchange.status.toUpperCase();
+                
+                item.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="font-bold">${exchange.amount_bkc.toLocaleString()} BKC ↔ ${exchange.amount_ton.toFixed(2)} TON</div>
+                            <div class="text-sm text-gray-400">Rate: ${exchange.rate.toFixed(2)} BKC/TON</div>
+                            <div class="text-xs text-gray-500">${new Date(exchange.created_at).toLocaleString()}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="${statusClass} px-3 py-1 rounded text-white text-sm font-bold mb-2">
+                                ${statusText}
+                            </div>
+                            <div class="text-sm text-gray-400">
+                                Fee: ${exchange.fee_ton.toFixed(2)} TON
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(item);
+            });
+            
+            if (myExchanges.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-400">📭 No exchanges yet</p>';
+            }
+        }
+
+        // Auto-calculate amounts
+        document.getElementById('sellAmountBKC').addEventListener('input', function() {
+            const amountBKC = parseFloat(this.value) || 0;
+            const rate = parseFloat(document.getElementById('sellRate').value) || 200;
+            const amountTON = amountBKC / rate;
+            document.getElementById('sellAmountTON').value = amountTON.toFixed(2);
+        });
+
+        document.getElementById('sellRate').addEventListener('input', function() {
+            const amountBKC = parseFloat(document.getElementById('sellAmountBKC').value) || 0;
+            const rate = parseFloat(this.value) || 200;
+            const amountTON = amountBKC / rate;
+            document.getElementById('sellAmountTON').value = amountTON.toFixed(2);
+        });
+
+        document.getElementById('buyAmountTON').addEventListener('input', function() {
+            const amountTON = parseFloat(this.value) || 0;
+            const rate = parseFloat(document.getElementById('buyRate').value) || 200;
+            const amountBKC = amountTON * rate;
+            document.getElementById('buyAmountBKC').value = amountBKC.toFixed(2);
+        });
+
+        document.getElementById('buyRate').addEventListener('input', function() {
+            const amountTON = parseFloat(document.getElementById('buyAmountTON').value) || 0;
+            const rate = parseFloat(this.value) || 200;
+            const amountBKC = amountTON * rate;
+            document.getElementById('buyAmountBKC').value = amountBKC.toFixed(2);
+        });
+
+        // Filter and sort handlers
+        document.getElementById('typeFilter').addEventListener('change', loadOffers);
+        document.getElementById('sortBy').addEventListener('change', loadOffers);
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initTonConnect();
+            loadCurrentRates();
+            loadOffers();
+            loadMyExchanges();
+            
+            // Auto-update
+            setInterval(loadCurrentRates, 30000); // Update rates every 30 seconds
+            setInterval(loadOffers, 60000); // Update offers every minute
+            setInterval(loadMyExchanges, 30000); // Update exchanges every 30 seconds
+        });
+    </script>
+</body>
+</html>

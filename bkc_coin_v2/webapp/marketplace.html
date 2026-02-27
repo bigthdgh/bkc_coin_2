@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Барахолка BKC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .listing-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: transform 0.3s ease;
+        }
+        .listing-card:hover {
+            transform: translateY(-5px);
+        }
+        .upload-area {
+            border: 2px dashed #4a5568;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #9f7aea;
+            background-color: rgba(159, 122, 234, 0.1);
+        }
+        .upload-area.dragover {
+            border-color: #9f7aea;
+            background-color: rgba(159, 122, 234, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
+                <i class="fas fa-store mr-3"></i>Барахолка BKC
+            </h1>
+            <p class="text-center text-gray-400 mt-2">Покупка и продажа физических товаров и фиатных валют</p>
+        </header>
+
+        <!-- Create Listing Button -->
+        <div class="mb-8 text-center">
+            <button onclick="showCreateForm()" 
+                class="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105">
+                <i class="fas fa-plus mr-2"></i>Создать объявление
+            </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="mb-6 bg-gray-800 rounded-lg p-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <input type="text" id="searchInput" placeholder="Поиск объявлений..." 
+                    class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                <select id="typeFilter" class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg">
+                    <option value="">Все типы</option>
+                    <option value="physical">Физические товары</option>
+                    <option value="fiat">Фиатные объявления</option>
+                </select>
+                <select id="categoryFilter" class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg">
+                    <option value="">Все категории</option>
+                    <option value="electronics">Электроника</option>
+                    <option value="clothing">Одежда</option>
+                    <option value="vehicles">Транспорт</option>
+                    <option value="real-estate">Недвижимость</option>
+                    <option value="services">Услуги</option>
+                    <option value="other">Другое</option>
+                </select>
+                <select id="sortBy" class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg">
+                    <option value="created_desc">Новые сначала</option>
+                    <option value="created_asc">Старые сначала</option>
+                    <option value="price_asc">Дешевле сначала</option>
+                    <option value="price_desc">Дороже сначала</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Listings Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="listingsGrid">
+            <!-- Listings will be loaded here -->
+        </div>
+
+        <!-- Create Listing Modal -->
+        <div id="createModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+            <div class="bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-purple-400">
+                        <i class="fas fa-plus mr-2"></i>Создание объявления
+                    </h2>
+                    <button onclick="hideCreateForm()" class="text-gray-400 hover:text-white">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <form id="listingForm" class="space-y-6">
+                    <!-- Basic Info -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Тип объявления</label>
+                            <select id="listingType" required
+                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                <option value="">Выберите тип</option>
+                                <option value="physical">Физический товар</option>
+                                <option value="fiat">Фиатная валюта</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Категория</label>
+                            <select id="listingCategory" required
+                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                <option value="">Выберите категорию</option>
+                                <option value="electronics">Электроника</option>
+                                <option value="clothing">Одежда</option>
+                                <option value="vehicles">Транспорт</option>
+                                <option value="real-estate">Недвижимость</option>
+                                <option value="services">Услуги</option>
+                                <option value="other">Другое</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Название</label>
+                        <input type="text" id="listingTitle" required
+                            class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            placeholder="Например: iPhone 13 Pro">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Описание</label>
+                        <textarea id="listingDescription" rows="4" required
+                            class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            placeholder="Подробное описание товара или услуги"></textarea>
+                    </div>
+
+                    <!-- Pricing -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Цена</label>
+                            <input type="number" id="listingPrice" step="0.01" min="100" required
+                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                placeholder="100">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Валюта</label>
+                            <select id="listingCurrency" required
+                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                <option value="bkc">BKC</option>
+                                <option value="usd">USD</option>
+                                <option value="rub">RUB</option>
+                                <option value="eur">EUR</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Местоположение</label>
+                        <input type="text" id="listingLocation"
+                            class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            placeholder="Город, страна">
+                    </div>
+
+                    <!-- Images Upload -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Изображения (максимум 5)</label>
+                        <div id="imageUploadArea" class="upload-area rounded-lg p-8 text-center mb-4">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                            <p class="text-lg mb-4">Перетащите изображения сюда или нажмите для выбора</p>
+                            <input type="file" id="imageInput" multiple accept="image/*" class="hidden">
+                            <button type="button" onclick="document.getElementById('imageInput').click()" 
+                                class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                                <i class="fas fa-folder-open mr-2"></i>Выбрать файлы
+                            </button>
+                        </div>
+                        <div id="imagePreview" class="grid grid-cols-5 gap-2">
+                            <!-- Image previews will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex justify-center">
+                        <button type="submit"
+                            class="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105">
+                            <i class="fas fa-rocket mr-2"></i>Создать объявление (300 BKC)
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Listing Detail Modal -->
+        <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+            <div class="bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-purple-400">
+                        <i class="fas fa-info-circle mr-2"></i>Детали объявления
+                    </h2>
+                    <button onclick="hideDetailModal()" class="text-gray-400 hover:text-white">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div id="detailContent">
+                    <!-- Listing details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let listings = [];
+        let uploadedImages = [];
+
+        // Tab switching and modal functions
+        function showCreateForm() {
+            document.getElementById('createModal').classList.remove('hidden');
+        }
+
+        function hideCreateForm() {
+            document.getElementById('createModal').classList.add('hidden');
+            document.getElementById('listingForm').reset();
+            uploadedImages = [];
+            renderImagePreview();
+        }
+
+        function showDetailModal(listing) {
+            const detailContent = document.getElementById('detailContent');
+            const typeIcon = listing.type === 'physical' ? 'fa-box' : 'fa-money-bill';
+            const typeText = listing.type === 'physical' ? 'Физический товар' : 'Фиатная валюта';
+            
+            detailContent.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex items-center space-x-4">
+                        <i class="fas ${typeIcon} text-3xl text-purple-400"></i>
+                        <div>
+                            <h3 class="text-xl font-bold">${listing.title}</h3>
+                            <p class="text-gray-400">${typeText}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Цена</label>
+                            <div class="text-2xl font-bold">
+                                ${listing.price.toLocaleString()} ${listing.currency.toUpperCase()}
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Местоположение</label>
+                            <div class="text-lg">
+                                ${listing.location || 'Не указано'}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Описание</label>
+                        <p class="text-gray-300">${listing.description || 'Нет описания'}</p>
+                    </div>
+                    
+                    ${listing.images && listing.images.length > 0 ? 
+                        `<div>
+                            <label class="block text-sm font-medium mb-2">Изображения</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                ${listing.images.map(img => `<img src="${img}" alt="Image" class="w-full h-32 object-cover rounded-lg">`).join('')}
+                            </div>
+                        </div>` : ''
+                    }
+                    
+                    <div class="flex space-x-4">
+                        <button onclick="buyWithEscrow('${listing.id}')" 
+                            class="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                            <i class="fas fa-shield-alt mr-2"></i>Купить через Escrow
+                        </button>
+                        <button onclick="contactSeller(${listing.user_id})" 
+                            class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-envelope mr-2"></i>Связаться с продавцом
+                        </button>
+                    </div>
+                    
+                    <div class="text-sm text-gray-400">
+                        <div>ID объявления: ${listing.id}</div>
+                        <div>Продавец: ID ${listing.user_id}</div>
+                        <div>Создано: ${new Date(listing.created_at).toLocaleString()}</div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        function hideDetailModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        // Image upload handling
+        document.getElementById('imageInput').addEventListener('change', handleImageUpload);
+
+        function handleImageUpload(event) {
+            const files = event.target.files;
+            const maxImages = 5;
+            
+            for (let i = 0; i < files.length && uploadedImages.length < maxImages; i++) {
+                const file = files[i];
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        uploadedImages.push({
+                            name: file.name,
+                            url: e.target.result
+                        });
+                        renderImagePreview();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+
+        function renderImagePreview() {
+            const preview = document.getElementById('imagePreview');
+            preview.innerHTML = '';
+            
+            uploadedImages.forEach((image, index) => {
+                const div = document.createElement('div');
+                div.className = 'relative';
+                div.innerHTML = `
+                    <img src="${image.url}" alt="${image.name}" class="w-full h-24 object-cover rounded-lg">
+                    <button type="button" onclick="removeImage(${index})" 
+                        class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-700">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                `;
+                preview.appendChild(div);
+            });
+        }
+
+        function removeImage(index) {
+            uploadedImages.splice(index, 1);
+            renderImagePreview();
+        }
+
+        // Drag and drop
+        const uploadArea = document.getElementById('imageUploadArea');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            document.getElementById('imageInput').files = files;
+            handleImageUpload({ target: { files } });
+        });
+
+        // Create listing
+        document.getElementById('listingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const listingData = {
+                type: document.getElementById('listingType').value,
+                category: document.getElementById('listingCategory').value,
+                title: document.getElementById('listingTitle').value,
+                description: document.getElementById('listingDescription').value,
+                price: parseFloat(document.getElementById('listingPrice').value),
+                currency: document.getElementById('listingCurrency').value,
+                location: document.getElementById('listingLocation').value,
+                images: uploadedImages.map(img => img.url)
+            };
+
+            try {
+                const response = await fetch('/api/v1/marketplace/listings/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(listingData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Объявление успешно создано! Комиссия: 300 BKC');
+                    hideCreateForm();
+                    loadListings();
+                } else {
+                    alert('Ошибка: ' + (result.message || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                alert('Ошибка соединения: ' + error.message);
+            }
+        });
+
+        // Buy with escrow
+        async function buyWithEscrow(listingId) {
+            try {
+                const response = await fetch('/api/v1/marketplace/escrow/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        listing_id: listingId,
+                        amount: 0, // Will be calculated from listing price
+                        currency: 'bkc'
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`Escrow создан! Сумма: ${result.total_amount} BKC (включая комиссию)`);
+                    hideDetailModal();
+                } else {
+                    alert('Ошибка: ' + (result.message || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                alert('Ошибка соединения: ' + error.message);
+            }
+        }
+
+        // Contact seller
+        function contactSeller(sellerId) {
+            alert(`Связаться с продавцом ID ${sellerId} (функция чата будет доступна в следующем обновлении)`);
+        }
+
+        // Load listings
+        async function loadListings() {
+            try {
+                const type = document.getElementById('typeFilter').value;
+                const category = document.getElementById('categoryFilter').value;
+                const search = document.getElementById('searchInput').value;
+                const sortBy = document.getElementById('sortBy').value;
+                
+                let url = '/api/v1/marketplace/listings?';
+                if (type) url += `type=${type}&`;
+                if (category) url += `category=${category}&`;
+                if (search) url += `search=${encodeURIComponent(search)}&`;
+                if (sortBy) url += `sort=${sortBy}&`;
+                
+                const response = await fetch(url.slice(0, -1));
+                const result = await response.json();
+                
+                if (result.success) {
+                    listings = result.listings;
+                    renderListings();
+                }
+            } catch (error) {
+                console.error('Error loading listings:', error);
+                // Mock data for demo
+                listings = [
+                    {
+                        id: 'listing_1',
+                        user_id: 123,
+                        type: 'physical',
+                        title: 'iPhone 13 Pro',
+                        description: 'Отличное состояние, оригинал, все аксессуары',
+                        price: 50000,
+                        currency: 'bkc',
+                        location: 'Москва, Россия',
+                        images: ['https://picsum.photos/seed/iphone/300/200.jpg'],
+                        category: 'electronics',
+                        status: 'active',
+                        created_at: new Date().toISOString()
+                    },
+                    {
+                        id: 'listing_2',
+                        user_id: 456,
+                        type: 'fiat',
+                        title: 'Продам USD',
+                        description: 'Обменяю USD на BKC по курсу 1000 BKC = 1 USD',
+                        price: 1000,
+                        currency: 'bkc',
+                        location: 'Санкт-Петербург, Россия',
+                        category: 'other',
+                        status: 'active',
+                        created_at: new Date(Date.now() - 86400000).toISOString()
+                    }
+                ];
+                renderListings();
+            }
+        }
+
+        // Render listings
+        function renderListings() {
+            const container = document.getElementById('listingsGrid');
+            container.innerHTML = '';
+            
+            listings.forEach(listing => {
+                const card = createListingCard(listing);
+                container.appendChild(card);
+            });
+            
+            if (listings.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-400 col-span-full">Объявления не найдены</p>';
+            }
+        }
+
+        // Create listing card
+        function createListingCard(listing) {
+            const card = document.createElement('div');
+            card.className = 'listing-card rounded-lg p-6 text-white cursor-pointer';
+            card.onclick = () => showDetailModal(listing);
+            
+            const typeIcon = listing.type === 'physical' ? 'fa-box' : 'fa-money-bill';
+            const typeText = listing.type === 'physical' ? 'Физический товар' : 'Фиат';
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center">
+                        <i class="fas ${typeIcon} mr-2"></i>
+                        <span class="text-sm">${typeText}</span>
+                    </div>
+                    <span class="text-xs text-gray-300">${listing.category}</span>
+                </div>
+                <h3 class="text-xl font-bold mb-2">${listing.title}</h3>
+                <p class="text-gray-300 text-sm mb-4 line-clamp-2">${listing.description || 'Без описания'}</p>
+                <div class="mb-4">
+                    <div class="text-2xl font-bold">
+                        ${listing.price.toLocaleString()} ${listing.currency.toUpperCase()}
+                    </div>
+                    <div class="text-sm text-gray-400">
+                        <i class="fas fa-map-marker-alt mr-1"></i>${listing.location || 'Местоположение не указано'}
+                    </div>
+                </div>
+                ${listing.images && listing.images.length > 0 ? 
+                    `<div class="mb-4">
+                        <img src="${listing.images[0]}" alt="${listing.title}" class="w-full h-32 object-cover rounded-lg">
+                    </div>` : ''
+                }
+                <div class="text-xs text-gray-400">
+                    <div>Продавец: ID ${listing.user_id}</div>
+                    <div>${new Date(listing.created_at).toLocaleDateString()}</div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Filter and search handlers
+        document.getElementById('typeFilter').addEventListener('change', loadListings);
+        document.getElementById('categoryFilter').addEventListener('change', loadListings);
+        document.getElementById('sortBy').addEventListener('change', loadListings);
+        
+        let searchTimeout;
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(loadListings, 500);
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadListings();
+        });
+    </script>
+</body>
+</html>

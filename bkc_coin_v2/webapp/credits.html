@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💳 Кредиты - BKC Coin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .neon-glow {
+            box-shadow: 0 0 20px rgba(245, 87, 108, 0.5);
+        }
+        
+        .loan-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            transition: all 0.3s ease;
+        }
+        
+        .loan-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(245, 87, 108, 0.4);
+        }
+        
+        .interest-rate {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .collector-mode {
+            background: linear-gradient(45deg, #dc2626, #ef4444);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .tab-active {
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            color: white;
+        }
+        
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #10b981, #3b82f6);
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen p-4">
+        <!-- Header -->
+        <header class="glass-effect rounded-2xl p-6 mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-4xl font-bold text-white mb-2">💳 Кредиты</h1>
+                    <p class="text-gray-300">Системные и P2P кредиты под залог</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-white text-sm mb-1">Ваш баланс</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="user-balance">0 BKC</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Основной контент -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Вкладки -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <div class="flex space-x-2 mb-6">
+                        <button onclick="showTab('bank')" id="bank-tab" class="px-6 py-3 rounded-lg font-semibold tab-active">
+                            🏦 Системные
+                        </button>
+                        <button onclick="showTab('p2p')" id="p2p-tab" class="px-6 py-3 rounded-lg font-semibold bg-gray-700 text-white">
+                            👥 P2P
+                        </button>
+                        <button onclick="showTab('collector')" id="collector-tab" class="px-6 py-3 rounded-lg font-semibold bg-gray-700 text-white">
+                            🏦 Коллектор
+                        </button>
+                    </div>
+                    
+                    <!-- Системные кредиты -->
+                    <div id="bank-loans" class="space-y-4">
+                        <h3 class="text-xl font-bold text-white mb-4">🏦 Системные кредиты</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="bank-loans-grid">
+                            <!-- Кредиты будут загружены сюда -->
+                        </div>
+                        
+                        <div class="mt-6">
+                            <h4 class="text-lg font-semibold text-white mb-3">Быстрый расчет</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-gray-300 text-sm">Сумма кредита (BKC)</label>
+                                    <input type="number" id="loan-amount" class="w-full bg-gray-800 text-white rounded-lg p-3" 
+                                           placeholder="10000" min="5000" step="1000">
+                                </div>
+                                <div>
+                                    <label class="text-gray-300 text-sm">Срок (дни)</label>
+                                    <select id="loan-term" class="w-full bg-gray-800 text-white rounded-lg p-3">
+                                        <option value="7">7 дней</option>
+                                        <option value="14">14 дней</option>
+                                        <option value="30">30 дней</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="text-2xl font-bold text-white mb-2">
+                                    <span class="interest-rate">5.0%</span>
+                                    <span class="text-gray-400"> в день</span>
+                                </div>
+                                <div class="text-gray-300 text-sm">
+                                    К погашению: <span id="calc-total">0</span> BKC
+                                </div>
+                            </div>
+                            <button onclick="takeBankLoan()" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-4 rounded-lg hover:from-green-600 hover:to-green-700">
+                                💰 Взять кредит
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- P2P кредиты -->
+                    <div id="p2p-loans" class="space-y-4 hidden">
+                        <h3 class="text-xl font-bold text-white mb-4">👥 P2P кредиты</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="p2p-loans-grid">
+                            <!-- P2P кредиты будут загружены сюда -->
+                        </div>
+                        
+                        <div class="mt-6">
+                            <h4 class="text-lg font-semibold text-white mb-3">Создать P2P кредит</h4>
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="text-gray-300 text-sm">Заемщик (ID)</label>
+                                        <input type="number" id="borrower-id" class="w-full bg-gray-800 text-white rounded-lg p-3" 
+                                               placeholder="987654321">
+                                    </div>
+                                    <div>
+                                        <label class="text-gray-300 text-sm">Сумма (BKC)</label>
+                                        <input type="number" id="p2p-amount" class="w-full bg-gray-800 text-white rounded-lg p-3" 
+                                               placeholder="25000" min="10000" step="1000">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="text-gray-300 text-sm">Срок (дни)</label>
+                                        <select id="p2p-term" class="w-full bg-gray-800 text-white rounded-lg p-3">
+                                            <option value="7">7 дней</option>
+                                            <option value="15">15 дней</option>
+                                            <option value="30">30 дней</option>
+                                            <option value="60">60 дней</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-gray-300 text-sm">Тип залога</label>
+                                        <select id="collateral-type" class="w-full bg-gray-800 text-white rounded-lg p-3">
+                                            <option value="nft">NFT</option>
+                                            <option value="bkc">BKC</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-gray-300 text-sm">Стоимость залога (BKC)</label>
+                                    <input type="number" id="collateral-value" class="w-full bg-gray-800 text-white rounded-lg p-3" 
+                                           placeholder="50000" min="1000" step="1000">
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="text-2xl font-bold text-white mb-2">
+                                    <span class="interest-rate">3.0%</span>
+                                    <span class="text-gray-400"> в день</span>
+                                </div>
+                                <button onclick="createP2PLoan()" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold py-4 rounded-lg hover:from-blue-600 hover:to-blue-700">
+                                    👥 Создать кредит
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Коллекторский режим -->
+                    <div id="collector-mode" class="space-y-4 hidden">
+                        <h3 class="text-xl font-bold text-white mb-4">🏦 Коллекторский режим</h3>
+                        <div class="glass-effect rounded-lg p-4 collector-mode">
+                            <div class="text-center">
+                                <div class="text-6xl mb-4">🏦</div>
+                                <div class="text-xl font-bold text-white mb-2">Активировать режим коллектора</div>
+                                <div class="text-gray-300 text-sm mb-4">
+                                    Собирайте просроченные кредиты и получайте комиссию
+                                </div>
+                                <button onclick="startCollectorMode()" class="bg-gradient-to-r from-red-500 to-red-600 text-white font-bold py-3 px-6 rounded-lg hover:from-red-600 hover:to-red-700">
+                                    🔪 Начать сбор
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <h4 class="text-lg font-semibold text-white mb-3">Просроченные кредиты</h4>
+                            <div class="space-y-2" id="overdue-loans">
+                                <!-- Просроченные кредиты будут загружены сюда -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- История кредитов -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-xl font-bold text-white mb-4">📋 История кредитов</h3>
+                    <div class="space-y-2" id="loan-history">
+                        <!-- История будет загружена сюда -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Боковая панель -->
+            <div class="space-y-6">
+                <!-- Статистика -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-lg font-bold text-white mb-4">📊 Статистика</h3>
+                    <div class="space-y-3">
+                        <div class="loan-card rounded-lg p-4">
+                            <div class="text-gray-400 text-sm">Всего кредитов сегодня</div>
+                            <div class="text-white font-bold text-lg" id="total-loans-today">0</div>
+                        </div>
+                        <div class="loan-card rounded-lg p-4">
+                            <div class="text-gray-400 text-sm">Выдано BKC сегодня</div>
+                            <div class="text-green-400 font-bold text-lg" id="total-loaned-today">0</div>
+                        </div>
+                        <div class="loan-card rounded-lg p-4">
+                            <div class="text-gray-400 text-sm">Доход от процентов</div>
+                            <div class="text-yellow-400 font-bold text-lg" id="interest-income-today">0</div>
+                        </div>
+                        <div class="loan-card rounded-lg p-4">
+                            <div class="text-gray-400 text-sm">Активных коллекторов</div>
+                            <div class="text-red-400 font-bold text-lg" id="active-collectors">0</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Топ кредиторов -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-lg font-bold text-white mb-4">🏆 Топ кредиторов</h3>
+                    <div class="space-y-2" id="top-lenders">
+                        <!-- Топ кредиторы будут загружены сюда -->
+                    </div>
+                </div>
+                
+                <!-- Топ заемщиков -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-lg font-bold text-white mb-4">💸 Топ заемщиков</h3>
+                    <div class="space-y-2" id="top-borrowers">
+                        <!-- Топ заемщики будут загружены сюда -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Переменные
+        let currentTab = 'bank';
+        let bankLoans = [];
+        let p2pLoans = [];
+        let loanHistory = [];
+        
+        // Инициализация TonConnect
+        const tonConnect = new TonConnectUI({
+            manifestUrl: 'https://your-app.com/tonconnect-manifest.json',
+            buttonRootId: 'ton-connect-button'
+        });
+        
+        // Переключение вкладок
+        function showTab(tab) {
+            currentTab = tab;
+            
+            // Обновляем стили кнопок
+            document.querySelectorAll('button').forEach(btn => {
+                btn.classList.remove('tab-active');
+                btn.classList.add('bg-gray-700', 'text-white');
+            });
+            
+            const activeBtn = document.getElementById(tab + '-tab');
+            activeBtn.classList.add('tab-active');
+            activeBtn.classList.remove('bg-gray-700', 'text-white');
+            
+            // Показываем соответствующий контент
+            document.getElementById('bank-loans').classList.add('hidden');
+            document.getElementById('p2p-loans').classList.add('hidden');
+            document.getElementById('collector-mode').classList.add('hidden');
+            
+            document.getElementById(tab + '-loans').classList.remove('hidden');
+        }
+        
+        // Загрузка системных кредитов
+        async function loadBankLoans() {
+            try {
+                const response = await fetch('/api/v1/credits/bank/available');
+                const result = await response.json();
+                
+                if (result.success) {
+                    bankLoans = result.loans;
+                    displayBankLoans();
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки кредитов:', error);
+            }
+        }
+        
+        // Отображение системных кредитов
+        function displayBankLoans() {
+            const grid = document.getElementById('bank-loans-grid');
+            grid.innerHTML = '';
+            
+            bankLoans.forEach(loan => {
+                const loanCard = document.createElement('div');
+                loanCard.className = 'loan-card rounded-lg p-4 cursor-pointer';
+                
+                loanCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="text-lg font-bold text-white">${loan.name}</h4>
+                        <div class="text-yellow-400 font-bold">${loan.interest_rate}%/день</div>
+                    </div>
+                    <div class="text-gray-300 text-sm mb-2">${loan.description}</div>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div>Сумма: ${formatNumber(loan.amount_min)} - ${formatNumber(loan.amount_max)} BKC</div>
+                        <div>Срок: ${loan.term_days} дней</div>
+                    </div>
+                    <button onclick="selectBankLoan('${loan.id}')" class="w-full bg-blue-600 text-white py-2 rounded-lg mt-3">
+                        Выбрать
+                    </button>
+                `;
+                
+                grid.appendChild(loanCard);
+            });
+        }
+        
+        // Выбор системного кредита
+        function selectBankLoan(loanId) {
+            const loan = bankLoans.find(l => l.id === parseInt(loanId));
+            if (loan) {
+                document.getElementById('loan-amount').value = loan.amount_min;
+                document.getElementById('loan-term').value = loan.term_days;
+                updateLoanCalculation(loan.interest_rate);
+            }
+        }
+        
+        // Расчет кредита
+        function updateLoanCalculation(interestRate) {
+            const amount = parseInt(document.getElementById('loan-amount').value) || 0;
+            const term = parseInt(document.getElementById('loan-term').value) || 7;
+            
+            const interestTotal = Math.floor(amount * (interestRate / 100) * term);
+            const totalDue = amount + interestTotal;
+            
+            document.getElementById('calc-total').textContent = formatNumber(totalDue);
+            document.querySelector('.interest-rate').textContent = interestRate.toFixed(1) + '%';
+        }
+        
+        // Взять системный кредит
+        async function takeBankLoan() {
+            const amount = parseInt(document.getElementById('loan-amount').value);
+            const term = parseInt(document.getElementById('loan-term').value);
+            
+            if (!amount || amount < 5000) {
+                showMessage('❌ Минимальная сумма: 5,000 BKC', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/v1/credits/bank/take', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: 123456789,
+                        amount: amount,
+                        term_days: term,
+                        interest_rate: 5.0
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(`✅ Кредит одобрен! Сумма: ${formatNumber(result.principal)} BKC`, 'success');
+                    updateUserBalance(-result.principal);
+                    loadLoanHistory();
+                } else {
+                    showMessage('❌ ' + (result.error || 'Ошибка кредита'), 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка взятия кредита:', error);
+                showMessage('❌ Ошибка при взятии кредита', 'error');
+            }
+        }
+        
+        // Загрузка P2P кредитов
+        async function loadP2PLoans() {
+            try {
+                const response = await fetch('/api/v1/credits/p2p/list?limit=10');
+                const result = await response.json();
+                
+                if (result.success) {
+                    p2pLoans = result.loans;
+                    displayP2PLoans();
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки P2P кредитов:', error);
+            }
+        }
+        
+        // Отображение P2P кредитов
+        function displayP2PLoans() {
+            const grid = document.getElementById('p2p-loans-grid');
+            grid.innerHTML = '';
+            
+            p2pLoans.forEach(loan => {
+                const loanCard = document.createElement('div');
+                loanCard.className = 'loan-card rounded-lg p-4';
+                
+                const collateralIcon = loan.collateral_type === 'nft' ? '🎨' : '💰';
+                const statusColor = loan.status === 'active' ? 'text-green-400' : 'text-red-400';
+                
+                loanCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="text-lg font-bold text-white">${collateralIcon} Залог: ${formatNumber(loan.collateral_value)} BKC</h4>
+                        <div class="${statusColor} font-bold">${loan.status.toUpperCase()}</div>
+                    </div>
+                    <div class="text-gray-300 text-sm mb-2">
+                        Заемщик: #${loan.borrower_id} | Срок: ${loan.term_days} дней
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div>Сумма: ${formatNumber(loan.principal)} BKC</div>
+                        <div>Ставка: 3.0%/день</div>
+                    </div>
+                    <div class="text-gray-500 text-xs mt-1">
+                        Создан: ${new Date(loan.created_at).toLocaleString()}
+                    </div>
+                `;
+                
+                grid.appendChild(loanCard);
+            });
+        }
+        
+        // Создание P2P кредита
+        async function createP2PLoan() {
+            const loanData = {
+                lender_id: 123456789,
+                borrower_id: parseInt(document.getElementById('borrower-id').value),
+                amount: parseInt(document.getElementById('p2p-amount').value),
+                term_days: parseInt(document.getElementById('p2p-term').value),
+                collateral_type: document.getElementById('collateral-type').value,
+                collateral_value: parseInt(document.getElementById('collateral-value').value)
+            };
+            
+            if (!loanData.borrower_id || loanData.amount < 10000) {
+                showMessage('❌ Заполните все поля корректно', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/v1/credits/p2p/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(loanData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('✅ P2P кредит создан!', 'success');
+                    loadP2PLoans();
+                } else {
+                    showMessage('❌ ' + (result.error || 'Ошибка создания'), 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка создания P2P кредита:', error);
+                showMessage('❌ Ошибка при создании кредита', 'error');
+            }
+        }
+        
+        // Активация коллекторского режима
+        async function startCollectorMode() {
+            try {
+                const response = await fetch(`/api/v1/credits/collector/start?user_id=123456789`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('🏦 Коллекторский режим активирован!', 'success');
+                    loadOverdueLoans();
+                } else {
+                    showMessage('❌ ' + (result.error || 'Ошибка активации'), 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка активации коллектора:', error);
+                showMessage('❌ Ошибка при активации', 'error');
+            }
+        }
+        
+        // Загрузка просроченных кредитов
+        async function loadOverdueLoans() {
+            try {
+                const response = await fetch('/api/v1/credits/p2p/list?limit=10');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const overdueLoans = result.loans.filter(loan => loan.status === 'overdue');
+                    displayOverdueLoans(overdueLoans);
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки просроченных кредитов:', error);
+            }
+        }
+        
+        // Отображение просроченных кредитов
+        function displayOverdueLoans(loans) {
+            const container = document.getElementById('overdue-loans');
+            container.innerHTML = '';
+            
+            if (loans.length === 0) {
+                container.innerHTML = '<p class="text-gray-400">Просроченных кредитов не найдено</p>';
+                return;
+            }
+            
+            loans.forEach(loan => {
+                const loanCard = document.createElement('div');
+                loanCard.className = 'loan-card rounded-lg p-4 border-l-4 border-red-500';
+                
+                loanCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="text-lg font-bold text-white">💸 Заемщик: #${loan.borrower_id}</h4>
+                        <div class="text-red-400 font-bold">ПРОСРОЧЕН</div>
+                    </div>
+                    <div class="text-gray-300 text-sm mb-2">
+                        Сумма: ${formatNumber(loan.principal)} BKC | Просрочка: ${loan.days_overdue} дней
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div>К погашению: ${formatNumber(loan.total_due)} BKC</div>
+                        <div>Комиссия коллектора: 50%</div>
+                    </div>
+                    <button onclick="collectLoan('${loan.id}')" class="w-full bg-red-600 text-white py-2 rounded-lg mt-3">
+                        🔪 Собрать долг
+                    </button>
+                `;
+                
+                container.appendChild(loanCard);
+            });
+        }
+        
+        // Сбор долга
+        async function collectLoan(loanId) {
+            try {
+                const response = await fetch('/api/v1/credits/repay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: 123456789,
+                        loan_id: loanId,
+                        amount: 0 // Полное погашение для коллектора
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('🏦 Должник найден! Начинаем процедуру взыскания...', 'success');
+                    loadOverdueLoans();
+                } else {
+                    showMessage('❌ ' + (result.error || 'Ошибка взыскания'), 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка взыскания долга:', error);
+                showMessage('❌ Ошибка при взыскании', 'error');
+            }
+        }
+        
+        // Загрузка истории кредитов
+        async function loadLoanHistory() {
+            try {
+                const response = await fetch('/api/v1/credits/history?user_id=123456789&limit=10');
+                const result = await response.json();
+                
+                if (result.success) {
+                    loanHistory = result.history;
+                    displayLoanHistory();
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки истории:', error);
+            }
+        }
+        
+        // Отображение истории кредитов
+        function displayLoanHistory() {
+            const container = document.getElementById('loan-history');
+            container.innerHTML = '';
+            
+            loanHistory.forEach(loan => {
+                const loanCard = document.createElement('div');
+                loanCard.className = 'loan-card rounded-lg p-4';
+                
+                const typeIcon = loan.type === 'bank' ? '🏦' : '👥';
+                const statusColor = loan.status === 'completed' ? 'text-green-400' : 'text-yellow-400';
+                
+                loanCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="text-lg font-bold text-white">${typeIcon} ${loan.type.toUpperCase()}</h4>
+                        <div class="${statusColor} font-bold">${loan.status.toUpperCase()}</div>
+                    </div>
+                    <div class="text-gray-300 text-sm mb-2">
+                        Сумма: ${formatNumber(loan.principal)} BKC | Процент: ${loan.interest_rate}%/день
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div>Создан: ${new Date(loan.created_at).toLocaleDateString()}</div>
+                        <div>погашен: ${loan.completed_at ? new Date(loan.completed_at).toLocaleDateString() : 'Активен'}</div>
+                    </div>
+                `;
+                
+                container.appendChild(loanCard);
+            });
+        }
+        
+        // Вспомогательные функции
+        function showMessage(text, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 p-4 rounded-lg text-white font-semibold z-50 ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+            }`;
+            toast.textContent = text;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+        
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+        
+        function updateUserBalance(amount) {
+            const balanceEl = document.getElementById('user-balance');
+            const currentBalance = parseInt(balanceEl.textContent.replace(/[^0-9]/g, ''));
+            balanceEl.textContent = formatNumber(currentBalance + amount) + ' BKC';
+        }
+        
+        // Инициализация
+        window.onload = function() {
+            loadBankLoans();
+            loadP2PLoans();
+            loadLoanHistory();
+            
+            // Обновление данных каждые 30 секунд
+            setInterval(() => {
+                // TODO: Обновлять статистику
+            }, 30000);
+        };
+    </script>
+</body>
+</html>

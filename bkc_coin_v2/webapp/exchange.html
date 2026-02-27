@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💱 BKC Exchange</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .neon-glow {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+        }
+        
+        .price-display {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .exchange-button {
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            transition: all 0.3s ease;
+        }
+        
+        .exchange-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            transition: transform 0.3s ease;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .trend-up {
+            color: #10b981;
+        }
+        
+        .trend-down {
+            color: #ef4444;
+        }
+        
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid #3b82f6;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen p-4">
+        <!-- Header -->
+        <header class="glass-effect rounded-2xl p-6 mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-4xl font-bold text-white mb-2">💱 BKC Exchange</h1>
+                    <p class="text-gray-300">Мини-биржа BKC ↔ TON</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-white text-sm mb-1">Ваш баланс</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="user-balance">0 BKC</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Основной контент -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Текущий курс -->
+                <div class="glass-effect rounded-2xl p-8 neon-glow">
+                    <div class="text-center mb-6">
+                        <div class="text-gray-300 mb-2">Текущий курс</div>
+                        <div class="price-display pulse-animation" id="current-price">
+                            0.00143 TON
+                        </div>
+                        <div class="mt-2">
+                            <span id="price-change" class="text-2xl font-bold trend-up">+2.1%</span>
+                            <span class="text-gray-400 ml-2">24ч</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Статистика курса -->
+                    <div class="grid grid-cols-4 gap-4 mt-6">
+                        <div class="text-center">
+                            <div class="text-gray-400 text-sm">24ч High</div>
+                            <div class="text-green-400 font-bold" id="high-24h">0.00147</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-gray-400 text-sm">24ч Low</div>
+                            <div class="text-red-400 font-bold" id="low-24h">0.00140</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-gray-400 text-sm">Объем 24ч</div>
+                            <div class="text-blue-400 font-bold" id="volume-24h">0</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-gray-400 text-sm">Мин. курс</div>
+                            <div class="text-yellow-400 font-bold" id="min-rate">0.00100</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- График -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-white">📈 График курса</h3>
+                        <div class="flex gap-2">
+                            <button onclick="changeChartPeriod('1h')" class="px-3 py-1 bg-gray-700 text-white rounded-lg text-sm">1ч</button>
+                            <button onclick="changeChartPeriod('24h')" class="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">24ч</button>
+                            <button onclick="changeChartPeriod('7d')" class="px-3 py-1 bg-gray-700 text-white rounded-lg text-sm">7д</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="price-chart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Панель обмена -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-xl font-bold text-white mb-4">💱 Обмен BKC → TON</h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-gray-300 text-sm">Количество BKC</label>
+                            <input type="number" id="exchange-amount" class="w-full bg-gray-800 text-white rounded-lg p-3" 
+                                   placeholder="10000" min="1000" step="1000" oninput="calculateExchange()">
+                        </div>
+                        
+                        <div>
+                            <label class="text-gray-300 text-sm">Курс обмена</label>
+                            <input type="number" id="exchange-rate" class="w-full bg-gray-800 text-white rounded-lg p-3" 
+                                   placeholder="0.00143" step="0.00001" oninput="calculateExchange()">
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-gray-300 text-sm">Вы получите (TON)</label>
+                                <div class="text-2xl font-bold text-green-400" id="ton-amount">0</div>
+                            </div>
+                            <div>
+                                <label class="text-gray-300 text-sm">Комиссия (3%)</label>
+                                <div class="text-2xl font-bold text-red-400" id="commission">0</div>
+                            </div>
+                        </div>
+                        
+                        <button onclick="performExchange()" class="w-full exchange-button text-white font-bold py-4 rounded-lg">
+                            💱 Обменять
+                        </button>
+                        
+                        <div class="text-center text-gray-400 text-sm">
+                            Мин. обмен: 1,000 BKC | Комиссия: 3%
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Боковая панель -->
+            <div class="space-y-6">
+                <!-- Статистика биржи -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-lg font-bold text-white mb-4">📊 Статистика биржи</h3>
+                    <div class="space-y-3">
+                        <div class="stats-card rounded-lg p-4">
+                            <div class="text-gray-400 text-sm">Объем 24ч</div>
+                            <div class="text-white font-bold text-lg" id="total-volume-24h">0 BKC</div>
+                        </div>
+                        <div class="stats-card rounded-lg p-4">
+                            <div class="text-gray-400 text-sm">Обменов 24ч</div>
+                            <div class="text-white font-bold text-lg" id="total-exchanges-24h">0</div>
+                        </div>
+                        <div class="stats-card rounded-lg p-4">
+                            <div class="text-gray-400 text-sm">Активных юзеров</div>
+                            <div class="text-white font-bold text-lg" id="active-users">0</div>
+                        </div>
+                        <div class="stats-card rounded-lg p-4">
+                            <div class="text-gray-400 text-sm">Комиссии 24ч</div>
+                            <div class="text-yellow-400 font-bold text-lg" id="commission-24h">0 BKC</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- История обменов -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-lg font-bold text-white mb-4">📋 История обменов</h3>
+                    <div id="exchange-history" class="space-y-2">
+                        <!-- История будет загружена сюда -->
+                    </div>
+                </div>
+                
+                <!-- Топ обмены -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-lg font-bold text-white mb-4">🏆 Топ обмены</h3>
+                    <div id="top-exchanges" class="space-y-2">
+                        <!-- Топ обмены будут загружены сюда -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Переменные
+        let currentRates = {
+            bkcToTON: 0.00143,
+            tonToBKC: 699.3,
+            minRate: 0.00100,
+            change24h: 2.1
+        };
+        
+        let priceChart = null;
+        let chartData = [];
+        let currentPeriod = '24h';
+        
+        // Инициализация TonConnect
+        const tonConnect = new TonConnectUI({
+            manifestUrl: 'https://your-app.com/tonconnect-manifest.json',
+            buttonRootId: 'ton-connect-button'
+        });
+        
+        // Инициализация графика
+        function initChart() {
+            const ctx = document.getElementById('price-chart').getContext('2d');
+            priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'BKC/TON',
+                        data: [],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: true,
+                        pointRadius: 0,
+                        pointHoverRadius: 5,
+                        pointHoverBackgroundColor: 'rgb(59, 130, 246)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'hour',
+                                displayFormats: {
+                                    hour: 'HH:mm'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.7)'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                callback: function(value) {
+                                    return value.toFixed(5);
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgb(59, 130, 246)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Курс: ' + context.parsed.y.toFixed(5) + ' TON';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Загрузка курсов
+        async function loadExchangeRates() {
+            try {
+                const response = await fetch('/api/v1/exchange/rates');
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentRates = result.rates;
+                    chartData = result.chart_data;
+                    
+                    updateRatesDisplay();
+                    updateChart();
+                    updateStats(result.stats);
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки курсов:', error);
+            }
+        }
+        
+        // Обновление отображения курсов
+        function updateRatesDisplay() {
+            document.getElementById('current-price').textContent = currentRates.bkcToTON.toFixed(5) + ' TON';
+            document.getElementById('exchange-rate').value = currentRates.bkcToTON.toFixed(5);
+            
+            const changeEl = document.getElementById('price-change');
+            changeEl.textContent = (currentRates.change24h >= 0 ? '+' : '') + currentRates.change24h.toFixed(1) + '%';
+            changeEl.className = currentRates.change24h >= 0 ? 'text-2xl font-bold trend-up' : 'text-2xl font-bold trend-down';
+            
+            // Обновляем статистику из данных графика
+            if (chartData.length > 0) {
+                const prices = chartData.map(d => d.price);
+                const volumes = chartData.map(d => d.volume);
+                
+                document.getElementById('high-24h').textContent = Math.max(...prices).toFixed(5);
+                document.getElementById('low-24h').textContent = Math.min(...prices).toFixed(5);
+                document.getElementById('volume-24h').textContent = formatNumber(Math.sum(...volumes));
+            }
+            
+            document.getElementById('min-rate').textContent = currentRates.minRate.toFixed(5);
+        }
+        
+        // Обновление графика
+        function updateChart() {
+            if (!priceChart || chartData.length === 0) return;
+            
+            const filteredData = filterDataByPeriod(chartData, currentPeriod);
+            
+            priceChart.data.labels = filteredData.map(d => new Date(d.time * 1000));
+            priceChart.data.datasets[0].data = filteredData.map(d => d.price);
+            priceChart.update();
+        }
+        
+        // Фильтрация данных по периоду
+        function filterDataByPeriod(data, period) {
+            const now = Date.now();
+            let cutoffTime;
+            
+            switch (period) {
+                case '1h':
+                    cutoffTime = now - (1 * 60 * 60 * 1000);
+                    break;
+                case '24h':
+                    cutoffTime = now - (24 * 60 * 60 * 1000);
+                    break;
+                case '7d':
+                    cutoffTime = now - (7 * 24 * 60 * 60 * 1000);
+                    break;
+                default:
+                    cutoffTime = now - (24 * 60 * 60 * 1000);
+            }
+            
+            return data.filter(d => d.time * 1000 >= cutoffTime);
+        }
+        
+        // Изменение периода графика
+        function changeChartPeriod(period) {
+            currentPeriod = period;
+            
+            // Обновляем стили кнопок
+            document.querySelectorAll('button').forEach(btn => {
+                if (btn.textContent.includes(period)) {
+                    btn.className = 'px-3 py-1 bg-blue-600 text-white rounded-lg text-sm';
+                } else if (btn.textContent.includes('ч') || btn.textContent.includes('д')) {
+                    btn.className = 'px-3 py-1 bg-gray-700 text-white rounded-lg text-sm';
+                }
+            });
+            
+            updateChart();
+        }
+        
+        // Расчет обмена
+        function calculateExchange() {
+            const amount = parseFloat(document.getElementById('exchange-amount').value) || 0;
+            const rate = parseFloat(document.getElementById('exchange-rate').value) || currentRates.bkcToTON;
+            
+            const tonAmount = amount * rate;
+            const commission = tonAmount * 0.03;
+            const netAmount = tonAmount - commission;
+            
+            document.getElementById('ton-amount').textContent = netAmount.toFixed(6);
+            document.getElementById('commission').textContent = commission.toFixed(6);
+        }
+        
+        // Выполнение обмена
+        async function performExchange() {
+            const amount = parseFloat(document.getElementById('exchange-amount').value);
+            const rate = parseFloat(document.getElementById('exchange-rate').value);
+            
+            if (!amount || amount < 1000) {
+                showMessage('❌ Минимальная сумма обмена: 1,000 BKC', 'error');
+                return;
+            }
+            
+            if (!rate || rate < currentRates.minRate) {
+                showMessage(`❌ Курс не может быть ниже ${currentRates.minRate.toFixed(5)} TON`, 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/v1/exchange/bkc-to-ton', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: 123456789,
+                        amount: Math.floor(amount),
+                        rate: rate
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(`✅ Обмен успешен! Получено: ${result.ton_amount.toFixed(6)} TON`, 'success');
+                    updateUserBalance(-Math.floor(amount));
+                    loadExchangeHistory();
+                } else {
+                    showMessage('❌ ' + (result.error || 'Ошибка обмена'), 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка обмена:', error);
+                showMessage('❌ Ошибка при обмене', 'error');
+            }
+        }
+        
+        // Загрузка истории обменов
+        async function loadExchangeHistory() {
+            try {
+                const response = await fetch('/api/v1/exchange/history?limit=10');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const historyDiv = document.getElementById('exchange-history');
+                    historyDiv.innerHTML = '';
+                    
+                    result.history.forEach(exchange => {
+                        const exchangeDiv = document.createElement('div');
+                        exchangeDiv.className = 'bg-gray-800 rounded-lg p-3';
+                        
+                        exchangeDiv.innerHTML = `
+                            <div class="flex justify-between items-center">
+                                <span class="text-white font-semibold">${formatNumber(exchange.from_amount)} BKC</span>
+                                <span class="text-blue-400">${exchange.to_amount.toFixed(6)} TON</span>
+                            </div>
+                            <div class="text-gray-400 text-xs mt-1">
+                                Курс: ${exchange.rate.toFixed(5)} | Комиссия: ${exchange.commission.toFixed(6)} TON
+                            </div>
+                            <div class="text-gray-500 text-xs mt-1">
+                                ${new Date(exchange.created_at).toLocaleString()}
+                            </div>
+                        `;
+                        
+                        historyDiv.appendChild(exchangeDiv);
+                    });
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки истории:', error);
+            }
+        }
+        
+        // Загрузка статистики
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/v1/exchange/stats');
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateStats(result.stats);
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки статистики:', error);
+            }
+        }
+        
+        // Обновление статистики
+        function updateStats(stats) {
+            document.getElementById('total-volume-24h').textContent = formatNumber(stats.total_volume_24h || 0) + ' BKC';
+            document.getElementById('total-exchanges-24h').textContent = stats.total_exchanges_24h || 0;
+            document.getElementById('active-users').textContent = stats.active_users || 0;
+            document.getElementById('commission-24h').textContent = formatNumber(stats.total_commission_24h || 0) + ' BKC';
+        }
+        
+        // Вспомогательные функции
+        function showMessage(text, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 p-4 rounded-lg text-white font-semibold z-50 ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+            }`;
+            toast.textContent = text;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+        
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+        
+        function updateUserBalance(amount) {
+            const balanceEl = document.getElementById('user-balance');
+            const currentBalance = parseInt(balanceEl.textContent.replace(/[^0-9]/g, ''));
+            balanceEl.textContent = formatNumber(currentBalance + amount) + ' BKC';
+        }
+        
+        // Инициализация
+        window.onload = function() {
+            initChart();
+            loadExchangeRates();
+            loadExchangeHistory();
+            loadStats();
+            
+            // Автообновление каждые 30 секунд
+            setInterval(() => {
+                loadExchangeRates();
+                loadStats();
+            }, 30000);
+        };
+        
+        // Добавляем метод sum в Math
+        Math.sum = function(array) {
+            return array.reduce((a, b) => a + b, 0);
+        };
+    </script>
+</body>
+</html>

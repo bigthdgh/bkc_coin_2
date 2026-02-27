@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ панель - NFT с фото</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .nft-preview {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: transform 0.3s ease;
+        }
+        .nft-preview:hover {
+            transform: scale(1.05);
+        }
+        .image-upload-area {
+            border: 2px dashed #4a5568;
+            transition: all 0.3s ease;
+        }
+        .image-upload-area:hover {
+            border-color: #9f7aea;
+            background-color: rgba(159, 122, 234, 0.1);
+        }
+        .image-upload-area.dragover {
+            border-color: #9f7aea;
+            background-color: rgba(159, 122, 234, 0.2);
+        }
+        .gallery-item {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .gallery-item:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 25px rgba(159, 122, 234, 0.3);
+        }
+        .gallery-item.selected {
+            border: 3px solid #9f7aea;
+            box-shadow: 0 0 20px rgba(159, 122, 234, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
+                <i class="fas fa-gem mr-3"></i>NFT с фото галереей
+            </h1>
+            <p class="text-center text-gray-400 mt-2">Создание NFT с выбором изображения из галереи</p>
+        </header>
+
+        <!-- Tabs -->
+        <div class="flex space-x-4 mb-8 border-b border-gray-700">
+            <button onclick="showTab('create')" class="tab-btn px-6 py-3 font-semibold hover:text-purple-400 transition-colors border-b-2 border-purple-500">
+                <i class="fas fa-plus mr-2"></i>Создать NFT
+            </button>
+            <button onclick="showTab('gallery')" class="tab-btn px-6 py-3 font-semibold hover:text-purple-400 transition-colors">
+                <i class="fas fa-images mr-2"></i>Галерея изображений
+            </button>
+            <button onclick="showTab('list')" class="tab-btn px-6 py-3 font-semibold hover:text-purple-400 transition-colors">
+                <i class="fas fa-list mr-2"></i>Список NFT
+            </button>
+        </div>
+
+        <!-- Create NFT Tab -->
+        <div id="create-tab" class="tab-content active">
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-gray-800 rounded-lg p-6 shadow-xl">
+                    <h2 class="text-2xl font-bold mb-6 text-purple-400">
+                        <i class="fas fa-magic mr-2"></i>Создание NFT с изображением
+                    </h2>
+                    
+                    <form id="nftForm" class="space-y-6">
+                        <!-- Image Selection -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Image Gallery -->
+                            <div>
+                                <label class="block text-sm font-medium mb-4">Выберите изображение из галереи</label>
+                                <div class="bg-gray-700 rounded-lg p-4">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h3 class="text-lg font-semibold">Галерея</h3>
+                                        <button type="button" onclick="openImageUpload()" 
+                                            class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                                            <i class="fas fa-upload mr-2"></i>Загрузить
+                                        </button>
+                                    </div>
+                                    <div id="imageGallery" class="grid grid-cols-3 gap-3 max-h-96 overflow-y-auto">
+                                        <!-- Gallery images will be loaded here -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- NFT Preview -->
+                            <div>
+                                <label class="block text-sm font-medium mb-4">Предпросмотр NFT</label>
+                                <div class="bg-gray-700 rounded-lg p-4">
+                                    <div id="nftPreview" class="nft-preview rounded-lg p-6 text-center">
+                                        <div id="previewImage" class="mb-4">
+                                            <i class="fas fa-image text-6xl text-gray-400"></i>
+                                        </div>
+                                        <h3 id="previewName" class="text-xl font-bold mb-2">Название NFT</h3>
+                                        <p id="previewDescription" class="text-gray-300 text-sm">Описание появится здесь</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- NFT Details -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Название NFT</label>
+                                <input type="text" id="nftName" required
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    placeholder="Например: Золотой робот"
+                                    oninput="updatePreview()">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Описание</label>
+                                <input type="text" id="nftDescription"
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    placeholder="Описание преимуществ NFT"
+                                    oninput="updatePreview()">
+                            </div>
+                        </div>
+
+                        <!-- Pricing -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Цена в BKC</label>
+                                <input type="number" id="nftPriceBKC" step="0.01" min="0"
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    placeholder="5000">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Цена в TON</label>
+                                <input type="number" id="nftPriceTON" step="0.01" min="0"
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    placeholder="3.5">
+                            </div>
+                        </div>
+
+                        <!-- NFT Bonuses -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Множитель тапов</label>
+                                <input type="number" id="nftTapMultiplier" step="0.1" min="1"
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    placeholder="2.0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Бонус к энергии</label>
+                                <input type="number" id="nftEnergyBonus" min="0"
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    placeholder="500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Бонус к дневным тапам</label>
+                                <input type="number" id="nftDailyBonus" min="0"
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    placeholder="500">
+                            </div>
+                        </div>
+
+                        <!-- Payment Options -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="allowBKC" checked
+                                    class="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500">
+                                <label for="allowBKC" class="ml-2">Разрешить оплату в BKC</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="allowTON" checked
+                                    class="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500">
+                                <label for="allowTON" class="ml-2">Разрешить оплату в TON</label>
+                            </div>
+                        </div>
+
+                        <!-- Hidden field for selected image -->
+                        <input type="hidden" id="selectedImage" value="">
+
+                        <!-- Submit Button -->
+                        <div class="flex justify-center">
+                            <button type="submit"
+                                class="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105">
+                                <i class="fas fa-rocket mr-2"></i>Создать NFT
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gallery Tab -->
+        <div id="gallery-tab" class="tab-content">
+            <div class="max-w-6xl mx-auto">
+                <div class="bg-gray-800 rounded-lg p-6 shadow-xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-purple-400">
+                            <i class="fas fa-images mr-2"></i>Галерея изображений
+                        </h2>
+                        <button onclick="openImageUpload()" 
+                            class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Добавить изображения
+                        </button>
+                    </div>
+
+                    <!-- Upload Area -->
+                    <div id="uploadArea" class="image-upload-area rounded-lg p-8 mb-6 text-center hidden">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-lg mb-4">Перетащите изображения сюда или нажмите для выбора</p>
+                        <input type="file" id="fileInput" multiple accept="image/*" class="hidden">
+                        <button onclick="document.getElementById('fileInput').click()" 
+                            class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                            <i class="fas fa-folder-open mr-2"></i>Выбрать файлы
+                        </button>
+                    </div>
+
+                    <!-- Gallery Grid -->
+                    <div id="fullGallery" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                        <!-- Gallery images will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- List NFT Tab -->
+        <div id="list-tab" class="tab-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="nftList">
+                <!-- NFTs will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Upload Modal -->
+    <div id="uploadModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Загрузка изображений</h3>
+                <button onclick="closeUploadModal()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="image-upload-area rounded-lg p-8 text-center">
+                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                <p class="text-lg mb-4">Перетащите изображения сюда или нажмите для выбора</p>
+                <input type="file" id="modalFileInput" multiple accept="image/*" class="hidden">
+                <button onclick="document.getElementById('modalFileInput').click()" 
+                    class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                    <i class="fas fa-folder-open mr-2"></i>Выбрать файлы
+                </button>
+            </div>
+            <div id="uploadProgress" class="mt-4 hidden">
+                <div class="bg-gray-700 rounded-full h-4 overflow-hidden">
+                    <div id="progressBar" class="bg-purple-600 h-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p id="progressText" class="text-center mt-2">0%</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedImageId = null;
+        let galleryImages = [];
+
+        // Initialize gallery with sample images
+        function initializeGallery() {
+            // Sample gallery images
+            galleryImages = [
+                { id: 'img1', url: 'https://picsum.photos/seed/nft1/200/200.jpg', name: 'Robot 1' },
+                { id: 'img2', url: 'https://picsum.photos/seed/nft2/200/200.jpg', name: 'Robot 2' },
+                { id: 'img3', url: 'https://picsum.photos/seed/nft3/200/200.jpg', name: 'Robot 3' },
+                { id: 'img4', url: 'https://picsum.photos/seed/nft4/200/200.jpg', name: 'Robot 4' },
+                { id: 'img5', url: 'https://picsum.photos/seed/nft5/200/200.jpg', name: 'Robot 5' },
+                { id: 'img6', url: 'https://picsum.photos/seed/nft6/200/200.jpg', name: 'Robot 6' },
+            ];
+            
+            renderGallery();
+            renderFullGallery();
+        }
+
+        // Tab switching
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-purple-500');
+            });
+            
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('border-purple-500');
+            
+            if (tabName === 'list') {
+                loadNFTList();
+            }
+        }
+
+        // Render gallery in create tab
+        function renderGallery() {
+            const container = document.getElementById('imageGallery');
+            container.innerHTML = '';
+            
+            galleryImages.forEach(img => {
+                const item = document.createElement('div');
+                item.className = `gallery-item rounded-lg overflow-hidden ${img.id === selectedImageId ? 'selected' : ''}`;
+                item.onclick = () => selectImage(img.id);
+                
+                item.innerHTML = `
+                    <img src="${img.url}" alt="${img.name}" class="w-full h-24 object-cover">
+                    <div class="p-2 bg-gray-600">
+                        <p class="text-xs truncate">${img.name}</p>
+                    </div>
+                `;
+                
+                container.appendChild(item);
+            });
+        }
+
+        // Render full gallery
+        function renderFullGallery() {
+            const container = document.getElementById('fullGallery');
+            container.innerHTML = '';
+            
+            galleryImages.forEach(img => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item rounded-lg overflow-hidden relative group';
+                
+                item.innerHTML = `
+                    <img src="${img.url}" alt="${img.name}" class="w-full h-32 object-cover">
+                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-center justify-center">
+                        <button onclick="deleteImage('${img.id}')" class="opacity-0 group-hover:opacity-100 bg-red-600 text-white p-2 rounded-full hover:bg-red-700 transition-all">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="p-2 bg-gray-600">
+                        <p class="text-xs truncate">${img.name}</p>
+                    </div>
+                `;
+                
+                container.appendChild(item);
+            });
+        }
+
+        // Select image for NFT
+        function selectImage(imageId) {
+            selectedImageId = imageId;
+            document.getElementById('selectedImage').value = imageId;
+            
+            // Update gallery selection
+            document.querySelectorAll('#imageGallery .gallery-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+            
+            // Update preview
+            const image = galleryImages.find(img => img.id === imageId);
+            if (image) {
+                document.getElementById('previewImage').innerHTML = `
+                    <img src="${image.url}" alt="${image.name}" class="w-32 h-32 object-cover rounded-lg mx-auto">
+                `;
+            }
+        }
+
+        // Update preview
+        function updatePreview() {
+            const name = document.getElementById('nftName').value || 'Название NFT';
+            const description = document.getElementById('nftDescription').value || 'Описание появится здесь';
+            
+            document.getElementById('previewName').textContent = name;
+            document.getElementById('previewDescription').textContent = description;
+        }
+
+        // Open image upload
+        function openImageUpload() {
+            document.getElementById('uploadModal').classList.remove('hidden');
+        }
+
+        // Close upload modal
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.add('hidden');
+            document.getElementById('uploadProgress').classList.add('hidden');
+        }
+
+        // Handle file upload
+        document.getElementById('modalFileInput').addEventListener('change', handleFileUpload);
+
+        function handleFileUpload(event) {
+            const files = event.target.files;
+            if (files.length === 0) return;
+            
+            const progressDiv = document.getElementById('uploadProgress');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            progressDiv.classList.remove('hidden');
+            
+            let uploaded = 0;
+            const total = files.length;
+            
+            Array.from(files).forEach((file, index) => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const newImage = {
+                            id: 'img' + Date.now() + '_' + index,
+                            url: e.target.result,
+                            name: file.name
+                        };
+                        
+                        galleryImages.push(newImage);
+                        uploaded++;
+                        
+                        const progress = Math.round((uploaded / total) * 100);
+                        progressBar.style.width = progress + '%';
+                        progressText.textContent = progress + '%';
+                        
+                        if (uploaded === total) {
+                            setTimeout(() => {
+                                closeUploadModal();
+                                renderGallery();
+                                renderFullGallery();
+                            }, 500);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // Delete image
+        function deleteImage(imageId) {
+            if (!confirm('Вы уверены, что хотите удалить это изображение?')) {
+                return;
+            }
+            
+            galleryImages = galleryImages.filter(img => img.id !== imageId);
+            renderFullGallery();
+            
+            if (selectedImageId === imageId) {
+                selectedImageId = null;
+                document.getElementById('selectedImage').value = '';
+                document.getElementById('previewImage').innerHTML = '<i class="fas fa-image text-6xl text-gray-400"></i>';
+            }
+        }
+
+        // Create NFT
+        document.getElementById('nftForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!selectedImageId) {
+                alert('Пожалуйста, выберите изображение для NFT');
+                return;
+            }
+            
+            const selectedImage = galleryImages.find(img => img.id === selectedImageId);
+            
+            const nftData = {
+                name: document.getElementById('nftName').value,
+                description: document.getElementById('nftDescription').value,
+                price_bkc: parseFloat(document.getElementById('nftPriceBKC').value) || 0,
+                price_ton: parseFloat(document.getElementById('nftPriceTON').value) || 0,
+                tap_multiplier: parseFloat(document.getElementById('nftTapMultiplier').value) || 1.0,
+                energy_bonus: parseInt(document.getElementById('nftEnergyBonus').value) || 0,
+                daily_tap_bonus: parseInt(document.getElementById('nftDailyBonus').value) || 0,
+                image_url: selectedImage.url,
+                image_id: selectedImageId,
+                allow_bkc: document.getElementById('allowBKC').checked,
+                allow_ton: document.getElementById('allowTON').checked,
+                metadata: {
+                    created_at: new Date().toISOString(),
+                    image_name: selectedImage.name
+                }
+            };
+
+            try {
+                const response = await fetch('/api/v1/admin/nft/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(nftData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('NFT успешно создано!');
+                    document.getElementById('nftForm').reset();
+                    selectedImageId = null;
+                    document.getElementById('selectedImage').value = '';
+                    document.getElementById('previewImage').innerHTML = '<i class="fas fa-image text-6xl text-gray-400"></i>';
+                    renderGallery();
+                } else {
+                    alert('Ошибка: ' + (result.message || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                alert('Ошибка соединения: ' + error.message);
+            }
+        });
+
+        // Load NFT list
+        async function loadNFTList() {
+            try {
+                const response = await fetch('/api/v1/admin/nft/list');
+                const result = await response.json();
+                
+                const container = document.getElementById('nftList');
+                container.innerHTML = '';
+                
+                if (result.success && result.nfts) {
+                    result.nfts.forEach(nft => {
+                        const card = createNFTCard(nft);
+                        container.appendChild(card);
+                    });
+                } else {
+                    container.innerHTML = '<p class="text-center text-gray-400 col-span-full">NFT не найдены</p>';
+                }
+            } catch (error) {
+                console.error('Error loading NFT list:', error);
+            }
+        }
+
+        // Create NFT card
+        function createNFTCard(nft) {
+            const card = document.createElement('div');
+            card.className = 'bg-gray-800 rounded-lg p-6 text-white';
+            
+            card.innerHTML = `
+                <div class="mb-4">
+                    ${nft.image_url ? 
+                        `<img src="${nft.image_url}" alt="${nft.name}" class="w-full h-40 object-cover rounded-lg">` :
+                        `<div class="w-full h-40 bg-gray-700 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-image text-4xl text-gray-400"></i>
+                        </div>`
+                    }
+                </div>
+                <h3 class="text-xl font-bold mb-2">${nft.name}</h3>
+                <p class="text-gray-300 text-sm mb-4">${nft.description || 'Без описания'}</p>
+                <div class="space-y-2 text-sm mb-4">
+                    <div class="flex justify-between">
+                        <span>Цена:</span>
+                        <span>${nft.price_bkc > 0 ? nft.price_bkc.toLocaleString() + ' BKC' : 'Бесплатно'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Множитель:</span>
+                        <span>x${nft.tap_multiplier || 1}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Энергия:</span>
+                        <span>+${nft.energy_bonus || 0}</span>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="editNFT('${nft.id}')" 
+                        class="flex-1 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-edit mr-1"></i>Изменить
+                    </button>
+                    <button onclick="deleteNFT('${nft.id}')" 
+                        class="flex-1 px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors">
+                        <i class="fas fa-trash mr-1"></i>Удалить
+                    </button>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Edit NFT
+        function editNFT(id) {
+            alert('Редактирование NFT будет доступно в следующем обновлении');
+        }
+
+        // Delete NFT
+        async function deleteNFT(id) {
+            if (!confirm('Вы уверены, что хотите удалить этот NFT?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/v1/admin/nft/delete?id=${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('NFT успешно удален!');
+                    loadNFTList();
+                } else {
+                    alert('Ошибка: ' + (result.message || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                alert('Ошибка соединения: ' + error.message);
+            }
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeGallery();
+        });
+    </script>
+</body>
+</html>

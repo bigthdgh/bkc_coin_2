@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BKC Marketplace - Professional Trading</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .glass-morphism {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .neon-glow {
+            text-shadow: 0 0 10px rgba(147, 51, 234, 0.8),
+                         0 0 20px rgba(147, 51, 234, 0.6),
+                         0 0 30px rgba(147, 51, 234, 0.4);
+        }
+        .listing-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .listing-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg);
+            transition: all 0.5s;
+        }
+        .listing-card:hover::before {
+            animation: shimmer 0.5s ease-in-out;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        .listing-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(147, 51, 234, 0.3);
+        }
+        .upload-area {
+            border: 2px dashed #4a5568;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #9f7aea;
+            background-color: rgba(159, 122, 234, 0.1);
+        }
+        .upload-area.dragover {
+            border-color: #9f7aea;
+            background-color: rgba(159, 122, 234, 0.2);
+        }
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        .escrow-protected {
+            background: linear-gradient(45deg, #10b981, #059669);
+            animation: escrowPulse 3s infinite;
+        }
+        @keyframes escrowPulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.6); }
+        }
+        .rating-stars {
+            background: linear-gradient(45deg, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Animated Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute w-96 h-96 bg-purple-600 rounded-full opacity-10 blur-3xl -top-48 -left-48 pulse-animation"></div>
+        <div class="absolute w-96 h-96 bg-blue-600 rounded-full opacity-10 blur-3xl -bottom-48 -right-48 pulse-animation" style="animation-delay: 1s;"></div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 relative z-10">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-6xl font-bold neon-glow mb-4">
+                <i class="fas fa-store mr-4"></i>BKC MARKETPLACE
+            </h1>
+            <p class="text-xl text-gray-300">Professional P2P Trading Platform</p>
+        </header>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="glass-morphism rounded-xl p-6 text-center">
+                <i class="fas fa-box text-3xl text-purple-500 mb-4"></i>
+                <h3 class="text-2xl font-bold" id="totalListings">0</h3>
+                <p class="text-gray-400">Total Listings</p>
+            </div>
+            <div class="glass-morphism rounded-xl p-6 text-center">
+                <i class="fas fa-shield-alt text-3xl text-green-500 mb-4"></i>
+                <h3 class="text-2xl font-bold" id="activeEscrow">0</h3>
+                <p class="text-gray-400">Active Escrow</p>
+            </div>
+            <div class="glass-morphism rounded-xl p-6 text-center">
+                <i class="fas fa-star text-3xl text-yellow-500 mb-4"></i>
+                <h3 class="text-2xl font-bold" id="avgRating">4.5</h3>
+                <p class="text-gray-400">Avg Rating</p>
+            </div>
+            <div class="glass-morphism rounded-xl p-6 text-center">
+                <i class="fas fa-chart-line text-3xl text-blue-500 mb-4"></i>
+                <h3 class="text-2xl font-bold" id="totalVolume">0</h3>
+                <p class="text-gray-400">24h Volume</p>
+            </div>
+        </div>
+
+        <!-- Create Listing Button -->
+        <div class="mb-8 text-center">
+            <button onclick="showCreateForm()" 
+                class="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 text-lg">
+                <i class="fas fa-plus mr-3"></i>CREATE LISTING (300 BKC)
+            </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="glass-morphism rounded-2xl p-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <input type="text" id="searchInput" placeholder="🔍 Search listings..." 
+                    class="px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                <select id="typeFilter" class="px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg">
+                    <option value="">📦 All Types</option>
+                    <option value="physical">📦 Physical Goods</option>
+                    <option value="fiat">💰 Fiat Currency</option>
+                </select>
+                <select id="categoryFilter" class="px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg">
+                    <option value="">📂 All Categories</option>
+                    <option value="electronics">💻 Electronics</option>
+                    <option value="clothing">👕 Clothing</option>
+                    <option value="vehicles">🚗 Vehicles</option>
+                    <option value="real-estate">🏠 Real Estate</option>
+                    <option value="services">🔧 Services</option>
+                    <option value="other">📦 Other</option>
+                </select>
+                <select id="sortBy" class="px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg">
+                    <option value="created_desc">📅 Newest</option>
+                    <option value="created_asc">📅 Oldest</option>
+                    <option value="price_asc">💰 Price Low</option>
+                    <option value="price_desc">💰 Price High</option>
+                    <option value="rating_desc">⭐ Top Rated</option>
+                </select>
+                <select id="priceRange" class="px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg">
+                    <option value="">💵 All Prices</option>
+                    <option value="0-1000">💵 Under 1K BKC</option>
+                    <option value="1000-5000">💵 1K-5K BKC</option>
+                    <option value="5000-10000">💵 5K-10K BKC</option>
+                    <option value="10000+">💵 Over 10K BKC</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Listings Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="listingsGrid">
+            <!-- Listings will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Create Listing Modal -->
+    <div id="createModal" class="fixed inset-0 bg-black bg-opacity-75 hidden flex items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-2xl p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-bold text-purple-400">
+                    <i class="fas fa-plus mr-3"></i>CREATE PROFESSIONAL LISTING
+                </h2>
+                <button onclick="hideCreateForm()" class="text-gray-400 hover:text-white text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="listingForm" class="space-y-6">
+                <!-- Basic Info -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-lg font-medium mb-3">📦 Listing Type</label>
+                        <select id="listingType" required
+                            class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg">
+                            <option value="">Select Type</option>
+                            <option value="physical">📦 Physical Product</option>
+                            <option value="fiat">💰 Fiat Currency</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-lg font-medium mb-3">📂 Category</label>
+                        <select id="listingCategory" required
+                            class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg">
+                            <option value="">Select Category</option>
+                            <option value="electronics">💻 Electronics</option>
+                            <option value="clothing">👕 Clothing</option>
+                            <option value="vehicles">🚗 Vehicles</option>
+                            <option value="real-estate">🏠 Real Estate</option>
+                            <option value="services">🔧 Services</option>
+                            <option value="other">📦 Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-lg font-medium mb-3">📝 Title</label>
+                    <input type="text" id="listingTitle" required
+                        class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg"
+                        placeholder="Professional title for your listing">
+                </div>
+
+                <div>
+                    <label class="block text-lg font-medium mb-3">📄 Description</label>
+                    <textarea id="listingDescription" rows="4" required
+                        class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg"
+                        placeholder="Detailed description of your item or service"></textarea>
+                </div>
+
+                <!-- Pricing -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-lg font-medium mb-3">💰 Price</label>
+                        <input type="number" id="listingPrice" step="0.01" min="100" required
+                            class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg"
+                            placeholder="100.00">
+                    </div>
+                    <div>
+                        <label class="block text-lg font-medium mb-3">💱 Currency</label>
+                        <select id="listingCurrency" required
+                            class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg">
+                            <option value="bkc">🪙 BKC</option>
+                            <option value="usd">💵 USD</option>
+                            <option value="rub">🇷🇺 RUB</option>
+                            <option value="eur">🇪🇺 EUR</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-lg font-medium mb-3">📍 Location</label>
+                        <input type="text" id="listingLocation"
+                            class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg"
+                            placeholder="City, Country">
+                    </div>
+                </div>
+
+                <!-- Images Upload -->
+                <div>
+                    <label class="block text-lg font-medium mb-3">📸 Images (Max 5)</label>
+                    <div id="imageUploadArea" class="upload-area rounded-2xl p-8 text-center mb-6">
+                        <i class="fas fa-cloud-upload-alt text-5xl text-gray-400 mb-4"></i>
+                        <p class="text-xl mb-4">Drag & Drop images here or click to browse</p>
+                        <input type="file" id="imageInput" multiple accept="image/*" class="hidden">
+                        <button type="button" onclick="document.getElementById('imageInput').click()" 
+                            class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-lg">
+                            <i class="fas fa-folder-open mr-2"></i>Choose Files
+                        </button>
+                    </div>
+                    <div id="imagePreview" class="grid grid-cols-5 gap-4">
+                        <!-- Image previews will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-center">
+                    <button type="submit"
+                        class="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all transform hover:scale-105 text-lg">
+                        <i class="fas fa-rocket mr-3"></i>PUBLISH LISTING - 300 BKC
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Listing Detail Modal -->
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-75 hidden flex items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-2xl p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-bold text-purple-400">
+                    <i class="fas fa-info-circle mr-3"></i>LISTING DETAILS
+                </h2>
+                <button onclick="hideDetailModal()" class="text-gray-400 hover:text-white text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="detailContent">
+                <!-- Listing details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let listings = [];
+        let uploadedImages = [];
+
+        // Tab switching and modal functions
+        function showCreateForm() {
+            document.getElementById('createModal').classList.remove('hidden');
+        }
+
+        function hideCreateForm() {
+            document.getElementById('createModal').classList.add('hidden');
+            document.getElementById('listingForm').reset();
+            uploadedImages = [];
+            renderImagePreview();
+        }
+
+        function showDetailModal(listing) {
+            const detailContent = document.getElementById('detailContent');
+            const typeIcon = listing.type === 'physical' ? 'fa-box' : 'fa-money-bill';
+            const typeText = listing.type === 'physical' ? 'Physical Product' : 'Fiat Currency';
+            
+            detailContent.innerHTML = `
+                <div class="space-y-8">
+                    <div class="flex items-center space-x-6">
+                        <i class="fas ${typeIcon} text-4xl text-purple-400"></i>
+                        <div>
+                            <h3 class="text-2xl font-bold">${listing.title}</h3>
+                            <p class="text-gray-400">${typeText}</p>
+                        </div>
+                        <div class="ml-auto">
+                            <div class="escrow-protected px-4 py-2 rounded-lg text-white text-sm font-bold">
+                                <i class="fas fa-shield-alt mr-2"></i>ESCROW PROTECTED
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <label class="block text-lg font-medium mb-3">💰 Price</label>
+                            <div class="text-3xl font-bold text-green-400">
+                                ${listing.price.toLocaleString()} ${listing.currency.toUpperCase()}
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-lg font-medium mb-3">📍 Location</label>
+                            <div class="text-xl">
+                                ${listing.location || 'Not specified'}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-lg font-medium mb-3">📄 Description</label>
+                        <p class="text-gray-300 text-lg leading-relaxed">${listing.description || 'No description'}</p>
+                    </div>
+                    
+                    ${listing.images && listing.images.length > 0 ? 
+                        `<div>
+                            <label class="block text-lg font-medium mb-3">📸 Images</label>
+                            <div class="grid grid-cols-3 gap-4">
+                                ${listing.images.map(img => `<img src="${img}" alt="Image" class="w-full h-48 object-cover rounded-xl hover:scale-105 transition-transform cursor-pointer" onclick="viewImage('${img}')">`).join('')}
+                            </div>
+                        </div>` : ''
+                    }
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <button onclick="buyWithEscrow('${listing.id}')" 
+                            class="px-6 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all transform hover:scale-105 text-lg">
+                            <i class="fas fa-shield-alt mr-3"></i>BUY WITH ESCROW
+                        </button>
+                        <button onclick="contactSeller(${listing.user_id})" 
+                            class="px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all transform hover:scale-105 text-lg">
+                            <i class="fas fa-envelope mr-3"></i>CONTACT SELLER
+                        </button>
+                    </div>
+                    
+                    <div class="glass-morphism rounded-xl p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                            <div>
+                                <span class="text-gray-400">Listing ID:</span>
+                                <span class="ml-2 font-bold">${listing.id}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Seller ID:</span>
+                                <span class="ml-2 font-bold">${listing.user_id}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Created:</span>
+                                <span class="ml-2 font-bold">${new Date(listing.created_at).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        function hideDetailModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        function viewImage(imageUrl) {
+            window.open(imageUrl, '_blank');
+        }
+
+        // Image upload handling
+        document.getElementById('imageInput').addEventListener('change', handleImageUpload);
+
+        function handleImageUpload(event) {
+            const files = event.target.files;
+            const maxImages = 5;
+            
+            for (let i = 0; i < files.length && uploadedImages.length < maxImages; i++) {
+                const file = files[i];
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        uploadedImages.push({
+                            name: file.name,
+                            url: e.target.result
+                        });
+                        renderImagePreview();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+
+        function renderImagePreview() {
+            const preview = document.getElementById('imagePreview');
+            preview.innerHTML = '';
+            
+            uploadedImages.forEach((image, index) => {
+                const div = document.createElement('div');
+                div.className = 'relative';
+                div.innerHTML = `
+                    <img src="${image.url}" alt="${image.name}" class="w-full h-24 object-cover rounded-lg">
+                    <button type="button" onclick="removeImage(${index})" 
+                        class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-700">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                `;
+                preview.appendChild(div);
+            });
+        }
+
+        function removeImage(index) {
+            uploadedImages.splice(index, 1);
+            renderImagePreview();
+        }
+
+        // Drag and drop
+        const uploadArea = document.getElementById('imageUploadArea');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            document.getElementById('imageInput').files = files;
+            handleImageUpload({ target: { files } });
+        });
+
+        // Create listing
+        document.getElementById('listingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const listingData = {
+                type: document.getElementById('listingType').value,
+                category: document.getElementById('listingCategory').value,
+                title: document.getElementById('listingTitle').value,
+                description: document.getElementById('listingDescription').value,
+                price: parseFloat(document.getElementById('listingPrice').value),
+                currency: document.getElementById('listingCurrency').value,
+                location: document.getElementById('listingLocation').value,
+                images: uploadedImages.map(img => img.url)
+            };
+
+            try {
+                const response = await fetch('/api/v1/marketplace/listings/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(listingData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('🎉 Listing created successfully! Fee: 300 BKC');
+                    hideCreateForm();
+                    loadListings();
+                } else {
+                    alert('❌ Error: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('❌ Connection error: ' + error.message);
+            }
+        });
+
+        // Buy with escrow
+        async function buyWithEscrow(listingId) {
+            try {
+                const response = await fetch('/api/v1/marketplace/escrow/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        listing_id: listingId,
+                        amount: 0,
+                        currency: 'bkc'
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`🛡️ Escrow created! Total: ${result.total_amount} BKC (including fee)`);
+                    hideDetailModal();
+                } else {
+                    alert('❌ Error: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('❌ Connection error: ' + error.message);
+            }
+        }
+
+        // Contact seller
+        function contactSeller(sellerId) {
+            alert(`💬 Contact seller ID ${sellerId} (Chat feature coming soon!)`);
+        }
+
+        // Load listings
+        async function loadListings() {
+            try {
+                const type = document.getElementById('typeFilter').value;
+                const category = document.getElementById('categoryFilter').value;
+                const search = document.getElementById('searchInput').value;
+                const sortBy = document.getElementById('sortBy').value;
+                const priceRange = document.getElementById('priceRange').value;
+                
+                let url = '/api/v1/marketplace/listings?';
+                if (type) url += `type=${type}&`;
+                if (category) url += `category=${category}&`;
+                if (search) url += `search=${encodeURIComponent(search)}&`;
+                if (sortBy) url += `sort=${sortBy}&`;
+                if (priceRange) url += `price_range=${priceRange}&`;
+                
+                const response = await fetch(url.slice(0, -1));
+                const result = await response.json();
+                
+                if (result.success) {
+                    listings = result.listings;
+                    renderListings();
+                }
+            } catch (error) {
+                console.error('Error loading listings:', error);
+                // Mock data for demo
+                listings = [
+                    {
+                        id: 'listing_1',
+                        user_id: 123,
+                        type: 'physical',
+                        title: 'iPhone 15 Pro Max - Brand New',
+                        description: 'Brand new iPhone 15 Pro Max, 256GB, Titanium color. Original box, all accessories included. 1 year warranty.',
+                        price: 75000,
+                        currency: 'bkc',
+                        location: 'Moscow, Russia',
+                        images: ['https://picsum.photos/seed/iphone15/400/300.jpg'],
+                        category: 'electronics',
+                        status: 'active',
+                        rating: 4.8,
+                        created_at: new Date().toISOString()
+                    },
+                    {
+                        id: 'listing_2',
+                        user_id: 456,
+                        type: 'fiat',
+                        title: 'Sell USD for BKC - Best Rate',
+                        description: 'Exchange USD to BKC at competitive rates. Fast transactions, verified seller. Minimum: $100, Maximum: $10,000.',
+                        price: 1000,
+                        currency: 'bkc',
+                        location: 'Dubai, UAE',
+                        images: ['https://picsum.photos/seed/usd/400/300.jpg'],
+                        category: 'other',
+                        status: 'active',
+                        rating: 4.9,
+                        created_at: new Date(Date.now() - 3600000).toISOString()
+                    }
+                ];
+                renderListings();
+            }
+        }
+
+        // Render listings
+        function renderListings() {
+            const container = document.getElementById('listingsGrid');
+            container.innerHTML = '';
+            
+            listings.forEach(listing => {
+                const card = createListingCard(listing);
+                container.appendChild(card);
+            });
+            
+            if (listings.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-400 col-span-full text-xl">📦 No listings found</p>';
+            }
+        }
+
+        // Create listing card
+        function createListingCard(listing) {
+            const card = document.createElement('div');
+            card.className = 'listing-card rounded-2xl p-6 text-white cursor-pointer';
+            card.onclick = () => showDetailModal(listing);
+            
+            const typeIcon = listing.type === 'physical' ? 'fa-box' : 'fa-money-bill';
+            const typeText = listing.type === 'physical' ? 'Physical' : 'Fiat';
+            const categoryIcon = getCategoryIcon(listing.category);
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas ${typeIcon} text-2xl"></i>
+                        <div>
+                            <span class="text-sm bg-purple-600 px-2 py-1 rounded-full">${typeText}</span>
+                            <span class="ml-2 text-sm bg-gray-600 px-2 py-1 rounded-full">${categoryIcon} ${listing.category}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        ${listing.rating ? `
+                            <div class="rating-stars text-sm">
+                                ${'★'.repeat(Math.floor(listing.rating))}${'☆'.repeat(5-Math.floor(listing.rating))}
+                            </div>
+                            <span class="text-sm">${listing.rating.toFixed(1)}</span>
+                        ` : ''}
+                    </div>
+                </div>
+                <h3 class="text-xl font-bold mb-3 line-clamp-2">${listing.title}</h3>
+                <p class="text-gray-300 text-sm mb-4 line-clamp-3">${listing.description || 'No description'}</p>
+                <div class="mb-4">
+                    <div class="text-2xl font-bold text-green-400">
+                        ${listing.price.toLocaleString()} ${listing.currency.toUpperCase()}
+                    </div>
+                    <div class="text-sm text-gray-400 flex items-center">
+                        <i class="fas fa-map-marker-alt mr-2"></i>${listing.location || 'Location not specified'}
+                    </div>
+                </div>
+                ${listing.images && listing.images.length > 0 ? 
+                    `<div class="mb-4">
+                        <img src="${listing.images[0]}" alt="${listing.title}" class="w-full h-40 object-cover rounded-xl">
+                    </div>` : ''
+                }
+                <div class="flex justify-between items-center">
+                    <div class="text-xs text-gray-400">
+                        <div>Seller: ID ${listing.user_id}</div>
+                        <div>${new Date(listing.created_at).toLocaleDateString()}</div>
+                    </div>
+                    <div class="escrow-protected px-3 py-1 rounded-lg text-white text-xs font-bold">
+                        <i class="fas fa-shield-alt mr-1"></i>ESCROW
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                electronics: '💻',
+                clothing: '👕',
+                vehicles: '🚗',
+                'real-estate': '🏠',
+                services: '🔧',
+                other: '📦'
+            };
+            return icons[category] || '📦';
+        }
+
+        // Filter and search handlers
+        document.getElementById('typeFilter').addEventListener('change', loadListings);
+        document.getElementById('categoryFilter').addEventListener('change', loadListings);
+        document.getElementById('sortBy').addEventListener('change', loadListings);
+        document.getElementById('priceRange').addEventListener('change', loadListings);
+        
+        let searchTimeout;
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(loadListings, 500);
+        });
+
+        // Update stats
+        function updateStats() {
+            document.getElementById('totalListings').textContent = listings.length;
+            document.getElementById('activeEscrow').textContent = Math.floor(listings.length * 0.3);
+            document.getElementById('avgRating').textContent = '4.5';
+            document.getElementById('totalVolume').textContent = (listings.length * 50000 / 1000000).toFixed(2) + 'M';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadListings();
+            setInterval(updateStats, 5000);
+        });
+    </script>
+</body>
+</html>

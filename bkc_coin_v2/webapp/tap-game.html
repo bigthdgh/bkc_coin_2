@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BKC Coin - Tap Game</title>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .game-container {
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 300px;
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .game-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .coin {
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            user-select: none;
+            position: relative;
+        }
+        .coin:hover {
+            transform: scale(1.05);
+        }
+        .coin.tapping {
+            transform: scale(0.95);
+        }
+        .tap-effect {
+            position: absolute;
+            color: #FFD700;
+            font-size: 24px;
+            font-weight: bold;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+        }
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px);
+            }
+        }
+        .stats-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+        }
+        .stat-label {
+            color: rgba(255,255,255,0.8);
+        }
+        .stat-value {
+            font-weight: bold;
+        }
+        .energy-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .energy-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #ffff00);
+            transition: width 0.3s;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f093fb, #f5576c);
+            transition: width 0.3s;
+        }
+        .shop-button {
+            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 20px;
+            color: white;
+            cursor: pointer;
+            margin: 10px 0;
+            width: 100%;
+            font-size: 16px;
+        }
+        .shop-button:hover {
+            transform: scale(1.05);
+        }
+        .nft-item {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .ton-connect-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 18px;
+            z-index: 2000;
+            display: none;
+        }
+        .message.success {
+            background: rgba(0,255,0,0.9);
+        }
+        .message.error {
+            background: rgba(255,0,0,0.9);
+        }
+    </style>
+</head>
+<body>
+    <div class="ton-connect-btn" id="ton-connect-button"></div>
+    
+    <div class="game-container">
+        <!-- Боковая панель -->
+        <div class="sidebar">
+            <h2>🪙 BKC Coin</h2>
+            
+            <div class="stats-card">
+                <h3>💰 Баланс</h3>
+                <div class="stat-item">
+                    <span class="stat-label">BKC:</span>
+                    <span class="stat-value" id="balance">0.0</span>
+                </div>
+            </div>
+
+            <div class="stats-card">
+                <h3>⚡ Энергия</h3>
+                <div class="stat-item">
+                    <span class="stat-label">Текущая:</span>
+                    <span class="stat-value" id="energy-current">1000</span>
+                </div>
+                <div class="energy-bar">
+                    <div class="energy-fill" id="energy-fill"></div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Максимум:</span>
+                    <span class="stat-value" id="energy-max">1000</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Доход за тап:</span>
+                    <span class="stat-value" id="tap-reward">0.1 BKC</span>
+                </div>
+            </div>
+
+            <div class="stats-card">
+                <h3>🎯 Сессии</h3>
+                <div class="stat-item">
+                    <span class="stat-label">Использовано:</span>
+                    <span class="stat-value" id="sessions-used">0/3</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Осталось:</span>
+                    <span class="stat-value" id="sessions-left">3</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Доход за сессию:</span>
+                    <span class="stat-value">100 BKC</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Дневной лимит:</span>
+                    <span class="stat-value">300 BKC</span>
+                </div>
+            </div>
+
+            <div class="stats-card">
+                <h3>ℹ️ Информация</h3>
+                <div class="stat-item">
+                    <span class="stat-label">1 сессия = 1000 тапов</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Восстановление = 1 час</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Лимит в день = 3 сессии</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Игровая область -->
+        <div class="game-area">
+            <div class="coin" id="coin" onclick="tap(event)">
+                🪙
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // TonConnect
+        const tonConnectUI = new TonConnectUI({
+            manifestUrl: 'https://your-app-url.com/tonconnect-manifest.json',
+            buttonRootId: 'ton-connect-button'
+        });
+
+        // Получение реального user_id из Telegram WebApp
+        function getUserId() {
+            // Проверяем Telegram WebApp
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
+                const telegramUser = window.Telegram.WebApp.initDataUnsafe.user;
+                if (telegramUser && telegramUser.id) {
+                    return telegramUser.id;
+                }
+            }
+            
+            // Проверяем localStorage
+            const savedUserId = localStorage.getItem('bkc_user_id');
+            if (savedUserId) {
+                return parseInt(savedUserId);
+            }
+            
+            // Генерируем временный ID для демо
+            const tempId = Math.floor(Math.random() * 1000000) + 1000000;
+            localStorage.setItem('bkc_user_id', tempId);
+            return tempId;
+        }
+
+        // Загрузка статуса пользователя
+        async function loadUserStatus() {
+            try {
+                const userId = getUserId();
+                const response = await fetch(`/api/v1/tap/status?user_id=${userId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const status = result.user_status;
+                    gameState.balance = status.balance;
+                    gameState.energyCurrent = status.energy_current;
+                    gameState.energyMax = status.energy_max;
+                    gameState.dailySessionsUsed = status.daily_sessions_used || 0;
+                    gameState.dailySessionsLeft = status.daily_sessions_left || 3;
+                    gameState.lastSessionEnd = status.last_session_end;
+                    gameState.tapReward = status.tap_reward || 10;
+
+                    updateUI();
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки статуса:', error);
+            }
+        }
+
+        // Обработка тапа
+        async function tap(event) {
+            if (gameState.isTapping || gameState.energyCurrent < 1) {
+                if (gameState.energyCurrent < 1) {
+                    if (gameState.dailySessionsLeft <= 0) {
+                        showMessage('🚫 Лимит сессий на сегодня исчерпан!', 'error');
+                    } else {
+                        const timeToFull = gameState.lastSessionEnd ? 
+                            Math.max(0, 3600000 - (Date.now() - new Date(gameState.lastSessionEnd).getTime())) : 0;
+                        if (timeToFull > 0) {
+                            const hours = Math.floor(timeToFull / 3600000);
+                            const minutes = Math.floor((timeToFull % 3600000) / 60000);
+                            showMessage(`⏰ Энергия восстановится через ${hours}ч ${minutes}м`, 'error');
+                        } else {
+                            showMessage('⚡ Энергия восстановлена! Начните новую сессию.', 'success');
+                        }
+                    }
+                }
+                return;
+            }
+
+            gameState.isTapping = true;
+            
+            // Анимация
+            const coin = document.getElementById('coin');
+            coin.classList.add('tapping');
+            
+            // Создаем эффект
+            createTapEffect(event.clientX, event.clientY);
+
+            try {
+                const userId = getUserId();
+                const response = await fetch('/api/v1/tap/process', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        timestamp: Date.now()
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Обновляем состояние
+                    gameState.balance = result.new_balance;
+                    gameState.energyCurrent = result.current_energy;
+                    gameState.dailySessionsLeft = result.daily_sessions_left;
+
+                    updateUI();
+                    
+                    // Показываем доход за тап
+                    const earnings = result.earnings / 100; // Конвертируем из BKC*100
+                    showMessage(`+${earnings.toFixed(1)} BKC`, 'success');
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка тапа:', error);
+                showMessage('❌ Ошибка соединения', 'error');
+            }
+
+            setTimeout(() => {
+                coin.classList.remove('tapping');
+                gameState.isTapping = false;
+            }, 100);
+        }
+
+        // Обновление интерфейса
+        function updateUI() {
+            document.getElementById('balance').textContent = (gameState.balance / 100).toFixed(1);
+            document.getElementById('energy-current').textContent = gameState.energyCurrent;
+            document.getElementById('energy-max').textContent = gameState.energyMax;
+            document.getElementById('tap-reward').textContent = (gameState.tapReward / 100).toFixed(1) + ' BKC';
+            
+            // Обновление сессий
+            const sessionsUsed = 3 - gameState.dailySessionsLeft;
+            document.getElementById('sessions-used').textContent = `${sessionsUsed}/3`;
+            document.getElementById('sessions-left').textContent = gameState.dailySessionsLeft;
+            
+            // Обновление энергии
+            const energyPercent = (gameState.energyCurrent / gameState.energyMax) * 100;
+            document.getElementById('energy-fill').style.width = energyPercent + '%';
+            
+            // Изменение цвета энергии в зависимости от количества
+            const energyFill = document.getElementById('energy-fill');
+            if (energyPercent > 50) {
+                energyFill.style.background = 'linear-gradient(90deg, #00ff00, #ffff00)';
+            } else if (energyPercent > 20) {
+                energyFill.style.background = 'linear-gradient(90deg, #ffff00, #ff8800)';
+            } else {
+                energyFill.style.background = 'linear-gradient(90deg, #ff8800, #ff0000)';
+            }
+        }
+
+        // Создание эффекта тапа
+        function createTapEffect(x, y) {
+            const effect = document.createElement('div');
+            effect.className = 'tap-effect';
+            effect.textContent = `+${(gameState.tapReward / 100).toFixed(1)}`;
+            effect.style.left = x + 'px';
+            effect.style.top = y + 'px';
+            document.body.appendChild(effect);
+
+            setTimeout(() => {
+                effect.remove();
+            }, 1000);
+        }
+
+        // Показать сообщение
+        function showMessage(text, type = 'success') {
+            const message = document.createElement('div');
+            message.className = `message ${type}`;
+            message.textContent = text;
+            message.style.display = 'block';
+            document.body.appendChild(message);
+
+            setTimeout(() => {
+                message.remove();
+            }, 2000);
+        }
+
+        // Инициализация игры
+        const gameState = {
+            balance: 0,
+            energyCurrent: 1000,
+            energyMax: 1000,
+            dailySessionsUsed: 0,
+            dailySessionsLeft: 3,
+            lastSessionEnd: null,
+            tapReward: 10, // 0.1 BKC * 100
+            isTapping: false
+        };
+
+        // Запуск приложения
+        window.addEventListener('load', () => {
+            loadUserStatus();
+            setInterval(loadUserStatus, 30000); // Обновление каждые 30 секунд
+        });
+
+    </script>
+</body>
+</html>

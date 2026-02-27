@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BKC Coin - Multi-Chain Payment</title>
+    <meta name="description" content="Buy BKC coins with TON, USDT (TON), or USDT (Solana)">
+    <meta name="theme-color" content="#1a1a2e">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/pwa_manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/static/css/payment.css">
+    <link rel="stylesheet" href="/static/css/main.css">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Meta tags for wallet integration -->
+    <meta name="ton-site-verification" content="your-verification-code">
+    <meta property="fc:frame" content="vNext">
+    <meta property="fc:frame:image" content="/images/og-image.png">
+    <meta property="fc:frame:button:1" content="Buy BKC Now">
+    <meta property="fc:frame:button:1:action" content="link">
+    <meta property="fc:frame:button:1:target" content="https://your-domain.com/payment">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="/icons/icon-192x192.png" alt="BKC Coin" class="logo-icon">
+                    <h1>BKC Coin</h1>
+                </div>
+                <div class="user-info">
+                    <div class="balance-display">
+                        <span class="balance-label">Balance:</span>
+                        <span id="user-balance" class="balance-amount">0 BKC</span>
+                    </div>
+                    <div class="user-menu">
+                        <img src="/images/default-avatar.png" alt="User" class="user-avatar">
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="payment-page">
+                <div class="page-header">
+                    <h2>Buy BKC Coins</h2>
+                    <p>Choose your preferred payment method and complete the purchase</p>
+                </div>
+
+                <!-- Chain Selection -->
+                <section class="chain-selection-section">
+                    <h3>Select Payment Method</h3>
+                    <div class="chain-selection">
+                        <div class="chain-option" data-chain="ton">
+                            <img src="/icons/ton.png" alt="TON">
+                            <h4>TON</h4>
+                            <p>Native TON cryptocurrency</p>
+                            <small>1 TON = 1000 BKC</small>
+                        </div>
+                        <div class="chain-option" data-chain="ton_usdt">
+                            <img src="/icons/usdt-ton.png" alt="USDT (TON)">
+                            <h4>USDT (TON)</h4>
+                            <p>USDT on TON blockchain</p>
+                            <small>1 USDT = 1000 BKC</small>
+                        </div>
+                        <div class="chain-option" data-chain="solana_usdt">
+                            <img src="/icons/usdt-sol.png" alt="USDT (Solana)">
+                            <h4>USDT (Solana)</h4>
+                            <p>USDT on Solana blockchain</p>
+                            <small>1 USDT = 1000 BKC</small>
+                        </div>
+                    </div>
+                    <div class="payment-notice">
+                        <p>⚠️ <strong>Notice:</strong> Only TON and USDT are supported. No fiat currencies available.</p>
+                    </div>
+                </section>
+
+                <!-- Chain Info -->
+                <section id="chain-info" class="chain-info-section" style="display: none;">
+                    <!-- Dynamic content -->
+                </section>
+
+                <!-- Payment Form -->
+                <section class="payment-form-section">
+                    <div class="payment-form">
+                        <div class="form-group">
+                            <label for="payment-type">Purchase Type</label>
+                            <select id="payment-type">
+                                <option value="purchase">General Purchase</option>
+                                <option value="nft">NFT Purchase</option>
+                                <option value="market">Marketplace Credits</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="payment-amount">Amount</label>
+                            <input type="number" id="payment-amount" placeholder="Enter amount" min="1" step="0.01">
+                            <small id="amount-hint">Minimum: 1 USDT/TON</small>
+                        </div>
+                        
+                        <button id="create-payment" class="create-payment-btn" disabled>
+                            Create Payment Order
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Payment Summary -->
+                <section id="payment-summary" class="payment-summary-section" style="display: none;">
+                    <!-- Dynamic content -->
+                </section>
+
+                <!-- Payment Interface -->
+                <section id="payment-interface" class="payment-interface-section">
+                    <!-- Dynamic content -->
+                </section>
+
+                <!-- Payment History -->
+                <section class="payment-history-section">
+                    <h3>Recent Payments</h3>
+                    <div id="payment-history" class="history-list">
+                        <!-- Dynamic content -->
+                    </div>
+                    <button class="load-more-btn" onclick="paymentSystem.loadMoreHistory()">
+                        Load More
+                    </button>
+                </section>
+
+                <!-- Help Section -->
+                <section class="help-section">
+                    <h3>Need Help?</h3>
+                    <div class="help-content">
+                        <div class="help-item">
+                            <h4>🚀 Fast Payments</h4>
+                            <p>TON transactions confirm in 10-30 seconds, Solana in 2-5 seconds</p>
+                        </div>
+                        <div class="help-item">
+                            <h4>🔒 Secure</h4>
+                            <p>All payments are processed through blockchain with full transparency</p>
+                        </div>
+                        <div class="help-item">
+                            <h4>💰 Low Fees</h4>
+                            <p>Only 2.5% platform fee for general purchases</p>
+                        </div>
+                        <div class="help-item">
+                            <h4>🌐 Multi-Chain</h4>
+                            <p>Choose from TON, USDT (TON), or USDT (Solana)</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-links">
+                    <a href="/support">Support</a>
+                    <a href="/terms">Terms</a>
+                    <a href="/privacy">Privacy</a>
+                    <a href="/docs">API Docs</a>
+                </div>
+                <div class="footer-social">
+                    <a href="https://t.me/bkc_coin" target="_blank">Telegram</a>
+                    <a href="https://twitter.com/bkc_coin" target="_blank">Twitter</a>
+                    <a href="https://github.com/bkc-coin" target="_blank">GitHub</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p>Processing payment...</p>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/payment.js"></script>
+    <script src="/static/js/main.js"></script>
+    
+    <!-- TON Connect -->
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    
+    <!-- Solana Web3.js -->
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    
+    <!-- QR Code Generator -->
+    <script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.min.js"></script>
+
+    <script>
+        // Initialize TON Connect
+        const tonConnectUI = new TONConnectUI({
+            manifestUrl: '/tonconnect-manifest.json',
+            buttonRootId: 'ton-connect-button'
+        });
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Load user balance
+            await loadUserBalance();
+            
+            // Load payment history
+            await loadPaymentHistory();
+            
+            // Setup form validation
+            setupFormValidation();
+            
+            // Setup real-time amount conversion
+            setupAmountConversion();
+        });
+
+        async function loadUserBalance() {
+            try {
+                const response = await fetch('/api/user/balance');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('user-balance').textContent = 
+                        data.balance.toLocaleString() + ' BKC';
+                }
+            } catch (error) {
+                console.error('Failed to load balance:', error);
+            }
+        }
+
+        async function loadPaymentHistory() {
+            try {
+                const response = await fetch('/api/payments/history?limit=5');
+                const data = await response.json();
+                
+                if (data.history) {
+                    renderPaymentHistory(data.history);
+                }
+            } catch (error) {
+                console.error('Failed to load payment history:', error);
+            }
+        }
+
+        function renderPaymentHistory(history) {
+            const historyElement = document.getElementById('payment-history');
+            
+            if (history.length === 0) {
+                historyElement.innerHTML = '<p class="no-history">No payment history yet</p>';
+                return;
+            }
+            
+            historyElement.innerHTML = history.map(payment => `
+                <div class="history-item ${payment.status}">
+                    <div class="history-info">
+                        <div class="history-amount">${payment.amount} ${payment.currency}</div>
+                        <div class="history-date">${new Date(payment.created_at).toLocaleDateString()}</div>
+                    </div>
+                    <div class="history-status">
+                        <span class="status-badge ${payment.status}">${payment.status}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function setupFormValidation() {
+            const amountInput = document.getElementById('payment-amount');
+            const createButton = document.getElementById('create-payment');
+            const chainOptions = document.querySelectorAll('.chain-option');
+            
+            // Enable/disable create button
+            function validateForm() {
+                const amount = parseFloat(amountInput.value);
+                const selectedChain = document.querySelector('.chain-option.selected');
+                
+                createButton.disabled = !amount || amount < 1 || !selectedChain;
+            }
+            
+            amountInput.addEventListener('input', validateForm);
+            chainOptions.forEach(option => {
+                option.addEventListener('click', validateForm);
+            });
+        }
+
+        function setupAmountConversion() {
+            const amountInput = document.getElementById('payment-amount');
+            const selectedChain = document.querySelector('.chain-option.selected');
+            
+            amountInput.addEventListener('input', async () => {
+                const amount = parseFloat(amountInput.value);
+                const chain = selectedChain?.dataset.chain;
+                const type = document.getElementById('payment-type').value;
+                
+                if (amount && chain) {
+                    const estimate = await paymentSystem.estimatePayment(amount, chain, type);
+                    if (estimate && estimate.valid) {
+                        updateAmountHint(estimate);
+                    }
+                }
+            });
+        }
+
+        function updateAmountHint(estimate) {
+            const hintElement = document.getElementById('amount-hint');
+            hintElement.textContent = `You will receive ${estimate.output.net_amount.toLocaleString()} BKC`;
+        }
+
+        // Handle mobile wallet deep links
+        function handleDeepLink() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const paymentId = urlParams.get('payment');
+            
+            if (paymentId) {
+                // Auto-open payment interface for specific payment
+                paymentSystem.checkPaymentStatus(paymentId);
+            }
+        }
+
+        // Check for mobile device
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Show appropriate wallet options based on device
+        function showWalletOptions(chain) {
+            if (isMobile()) {
+                // Show mobile wallet options
+                if (chain === 'ton') {
+                    return ['TON Wallet', 'MyTonWallet', 'OpenMask'];
+                } else if (chain === 'solana_usdt') {
+                    return ['Phantom', 'Trust Wallet', 'MetaMask', 'Solflare'];
+                }
+            } else {
+                // Show desktop wallet options
+                if (chain === 'ton') {
+                    return ['Tonkeeper', 'MyTonWallet', 'OpenMask (Chrome)'];
+                } else if (chain === 'solana_usdt') {
+                    return ['Phantom', 'Solflare', 'MetaMask (with Solana)'];
+                }
+            }
+            return [];
+        }
+
+        // Initialize deep link handling
+        handleDeepLink();
+
+        // Service Worker registration for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').then(registration => {
+                console.log('SW registered: ', registration);
+            }).catch(registrationError => {
+                console.log('SW registration failed: ', registrationError);
+            });
+        }
+    </script>
+</body>
+</html>

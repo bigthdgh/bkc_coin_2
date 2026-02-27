@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Ракетка - BKC Coin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .neon-glow {
+            box-shadow: 0 0 20px rgba(245, 87, 108, 0.5);
+        }
+        
+        .crash-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .multiplier-display {
+            font-size: 4rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(245, 87, 108, 0.5);
+        }
+        
+        .bet-button {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            transition: all 0.3s ease;
+        }
+        
+        .bet-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(245, 87, 108, 0.4);
+        }
+        
+        .cashout-button {
+            background: linear-gradient(45deg, #00ff88, #00cc66);
+        }
+        
+        .crashed {
+            animation: shake 0.5s;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+        }
+        
+        .live-indicator {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen p-4">
+        <!-- Header -->
+        <header class="glass-effect rounded-2xl p-6 mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-4xl font-bold text-white mb-2">🚀 Ракетка</h1>
+                    <p class="text-gray-300">Provably Fair Crash Game</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-white text-sm mb-1">Ваш баланс</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="user-balance">0 BKC</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Основная игра -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Текущая игра -->
+                <div class="glass-effect rounded-2xl p-8 neon-glow">
+                    <div class="text-center mb-6">
+                        <div class="flex justify-center items-center mb-4">
+                            <span class="live-indicator bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">LIVE</span>
+                            <span class="ml-3 text-gray-300">Игра #<span id="game-id">12345</span></span>
+                        </div>
+                        
+                        <div id="multiplier" class="multiplier-display crash-animation">
+                            1.00x
+                        </div>
+                        
+                        <div class="mt-4 text-gray-300">
+                            <div class="text-sm">Хэш: <code id="game-hash" class="text-xs">a1b2c3d4e5f6...</code></div>
+                            <div class="text-xs mt-1">Provably Fair ✅</div>
+                        </div>
+                    </div>
+                    
+                    <!-- График множителя -->
+                    <div class="mt-6">
+                        <canvas id="crash-chart" width="400" height="200"></canvas>
+                    </div>
+                    
+                    <!-- Статистика игры -->
+                    <div class="grid grid-cols-3 gap-4 mt-6">
+                        <div class="text-center">
+                            <div class="text-gray-400 text-sm">Игроков</div>
+                            <div class="text-white font-bold" id="players-count">0</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-gray-400 text-sm">Общий банк</div>
+                            <div class="text-green-400 font-bold" id="total-bets">0 BKC</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-gray-400 text-sm">Победителей</div>
+                            <div class="text-yellow-400 font-bold" id="winners-count">0</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Панель ставок -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-xl font-bold text-white mb-4">Сделать ставку</h3>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="text-gray-300 text-sm">Сумма ставки (BKC)</label>
+                            <input type="number" id="bet-amount" class="w-full bg-gray-800 text-white rounded-lg p-3" 
+                                   placeholder="1000" min="1000" step="1000">
+                        </div>
+                        <div>
+                            <label class="text-gray-300 text-sm">Авто-кэшаут</label>
+                            <input type="number" id="auto-cashout" class="w-full bg-gray-800 text-white rounded-lg p-3" 
+                                   placeholder="2.00" min="1.01" max="10.00" step="0.01">
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4">
+                        <button onclick="placeBet()" class="flex-1 bet-button text-white font-bold py-4 rounded-lg">
+                            🚀 Сделать ставку
+                        </button>
+                        <button onclick="cashout()" class="flex-1 cashout-button text-white font-bold py-4 rounded-lg" id="cashout-btn" disabled>
+                            💰 Забрать
+                        </button>
+                    </div>
+                    
+                    <div class="mt-4 text-center text-gray-400 text-sm">
+                        Мин. ставка: 1,000 BKC | Комиссия: 3%
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Боковая панель -->
+            <div class="space-y-6">
+                <!-- История игр -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-lg font-bold text-white mb-4">📊 История игр</h3>
+                    <div id="game-history" class="space-y-2">
+                        <!-- История будет загружена сюда -->
+                    </div>
+                </div>
+                
+                <!-- Статистика -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-lg font-bold text-white mb-4">📈 Статистика</h3>
+                    <div class="space-y-3">
+                        <div class="stats-card rounded-lg p-3">
+                            <div class="text-gray-400 text-sm">Игр сегодня</div>
+                            <div class="text-white font-bold" id="games-today">0</div>
+                        </div>
+                        <div class="stats-card rounded-lg p-3">
+                            <div class="text-gray-400 text-sm">Макс. множитель</div>
+                            <div class="text-green-400 font-bold" id="max-multiplier">0.00x</div>
+                        </div>
+                        <div class="stats-card rounded-lg p-3">
+                            <div class="text-gray-400 text-sm">Прибыль системы</div>
+                            <div class="text-yellow-400 font-bold" id="system-profit">0 BKC</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Топ игроки -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-lg font-bold text-white mb-4">🏆 Топ игроки</h3>
+                    <div id="top-players" class="space-y-2">
+                        <!-- Топ игроки будут загружены сюда -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Игровые переменные
+        let currentGame = {
+            id: 'crash_1234567890',
+            multiplier: 1.00,
+            status: 'active',
+            crashPoint: 2.45,
+            startTime: Date.now()
+        };
+        
+        let userBet = null;
+        let crashChart = null;
+        let chartData = [];
+        
+        // Инициализация TonConnect
+        const tonConnect = new TonConnectUI({
+            manifestUrl: 'https://your-app.com/tonconnect-manifest.json',
+            buttonRootId: 'ton-connect-button'
+        });
+        
+        // Инициализация графика
+        function initChart() {
+            const ctx = document.getElementById('crash-chart').getContext('2d');
+            crashChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Множитель',
+                        data: [],
+                        borderColor: 'rgb(245, 87, 108)',
+                        backgroundColor: 'rgba(245, 87, 108, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                callback: function(value) {
+                                    return value.toFixed(2) + 'x';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Загрузка данных игры
+        async function loadCurrentGame() {
+            try {
+                const response = await fetch('/api/v1/games/crash/current');
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentGame = result.game;
+                    updateGameDisplay();
+                    startGameSimulation();
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки игры:', error);
+            }
+        }
+        
+        // Обновление отображения игры
+        function updateGameDisplay() {
+            document.getElementById('game-id').textContent = currentGame.id.split('_')[1];
+            document.getElementById('game-hash').textContent = currentGame.hash.substring(0, 12) + '...';
+            document.getElementById('multiplier').textContent = currentGame.multiplier.toFixed(2) + 'x';
+            document.getElementById('players-count').textContent = currentGame.total_players || 0;
+            document.getElementById('total-bets').textContent = formatNumber(currentGame.total_bets || 0);
+            document.getElementById('winners-count').textContent = currentGame.total_winners || 0;
+        }
+        
+        // Симуляция игры
+        function startGameSimulation() {
+            let elapsed = 0;
+            const interval = setInterval(() => {
+                elapsed += 100;
+                
+                if (currentGame.status === 'active') {
+                    // Рост множителя
+                    currentGame.multiplier = 1 + (elapsed / 1000) * 0.5;
+                    
+                    // Добавляем данные в график
+                    chartData.push({x: elapsed, y: currentGame.multiplier});
+                    if (chartData.length > 50) chartData.shift();
+                    
+                    crashChart.data.labels = chartData.map(d => d.x);
+                    crashChart.data.datasets[0].data = chartData.map(d => d.y);
+                    crashChart.update('none');
+                    
+                    updateGameDisplay();
+                    
+                    // Проверка на крах
+                    if (currentGame.multiplier >= currentGame.crashPoint) {
+                        crashGame();
+                        clearInterval(interval);
+                    }
+                }
+            }, 100);
+        }
+        
+        // Крах игры
+        function crashGame() {
+            currentGame.status = 'crashed';
+            document.getElementById('multiplier').classList.add('crashed');
+            document.getElementById('multiplier').textContent = 'CRASHED! ' + currentGame.crashPoint.toFixed(2) + 'x';
+            
+            if (userBet && !userBet.cashedOut) {
+                showMessage('💥 Игра взорвалась! Ставка проиграна.', 'error');
+            }
+            
+            // Новая игра через 5 секунд
+            setTimeout(() => {
+                document.getElementById('multiplier').classList.remove('crashed');
+                loadCurrentGame();
+            }, 5000);
+        }
+        
+        // Сделать ставку
+        async function placeBet() {
+            const amount = parseInt(document.getElementById('bet-amount').value);
+            const autoCashout = parseFloat(document.getElementById('auto-cashout').value);
+            
+            if (!amount || amount < 1000) {
+                showMessage('❌ Минимальная ставка: 1,000 BKC', 'error');
+                return;
+            }
+            
+            if (!autoCashout || autoCashout < 1.01 || autoCashout > 10.0) {
+                showMessage('❌ Авто-кэшаут должен быть от 1.01x до 10.0x', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/v1/games/crash/bet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: 123456789,
+                        amount: amount,
+                        auto_cashout: autoCashout
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    userBet = {
+                        id: result.bet_id,
+                        amount: amount,
+                        autoCashout: autoCashout,
+                        cashedOut: false
+                    };
+                    
+                    document.getElementById('cashout-btn').disabled = false;
+                    showMessage('✅ Ставка принята!', 'success');
+                    
+                    // Авто-кэшаут
+                    if (autoCashout > 1.0) {
+                        checkAutoCashout();
+                    }
+                } else {
+                    showMessage('❌ ' + (result.error || 'Ошибка ставки'), 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка ставки:', error);
+                showMessage('❌ Ошибка при ставке', 'error');
+            }
+        }
+        
+        // Кэшаут
+        async function cashout() {
+            if (!userBet || userBet.cashedOut) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/v1/games/crash/cashout?bet_id=${userBet.id}&user_id=123456789`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    userBet.cashedOut = true;
+                    document.getElementById('cashout-btn').disabled = true;
+                    
+                    showMessage(`💰 Забрано: ${formatNumber(result.result.win_amount)} BKC!`, 'success');
+                    updateUserBalance(result.result.win_amount);
+                } else {
+                    showMessage('❌ ' + (result.error || 'Ошибка кэшаута'), 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка кэшаута:', error);
+                showMessage('❌ Ошибка при кэшауте', 'error');
+            }
+        }
+        
+        // Проверка авто-кэшаута
+        function checkAutoCashout() {
+            const interval = setInterval(() => {
+                if (userBet && !userBet.cashedOut && currentGame.multiplier >= userBet.autoCashout) {
+                    cashout();
+                    clearInterval(interval);
+                }
+                if (currentGame.status === 'crashed') {
+                    clearInterval(interval);
+                }
+            }, 100);
+        }
+        
+        // Загрузка истории
+        async function loadGameHistory() {
+            try {
+                const response = await fetch('/api/v1/games/crash/history?limit=5');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const historyDiv = document.getElementById('game-history');
+                    historyDiv.innerHTML = '';
+                    
+                    result.history.forEach(game => {
+                        const gameDiv = document.createElement('div');
+                        gameDiv.className = 'bg-gray-800 rounded-lg p-3';
+                        
+                        const statusColor = game.crash_point <= 1.01 ? 'text-red-400' : 'text-green-400';
+                        const statusText = game.crash_point <= 1.01 ? '💥' : '✅';
+                        
+                        gameDiv.innerHTML = `
+                            <div class="flex justify-between items-center">
+                                <span class="text-white font-semibold">#${game.id.split('_')[1]}</span>
+                                <span class="${statusColor}">${statusText} ${game.crash_point.toFixed(2)}x</span>
+                            </div>
+                            <div class="text-gray-400 text-xs mt-1">
+                                Банк: ${formatNumber(game.total_bets)} BKC
+                            </div>
+                        `;
+                        
+                        historyDiv.appendChild(gameDiv);
+                    });
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки истории:', error);
+            }
+        }
+        
+        // Загрузка статистики
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/v1/games/stats');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const stats = result.stats;
+                    document.getElementById('games-today').textContent = stats.total_games_today;
+                    document.getElementById('max-multiplier').textContent = stats.biggest_multiplier_today.toFixed(2) + 'x';
+                    document.getElementById('system-profit').textContent = formatNumber(stats.system_profit_today);
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки статистики:', error);
+            }
+        }
+        
+        // Вспомогательные функции
+        function showMessage(text, type = 'info') {
+            // Создаем toast уведомление
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 p-4 rounded-lg text-white font-semibold z-50 ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+            }`;
+            toast.textContent = text;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+        
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+        
+        function updateUserBalance(amount) {
+            const balanceEl = document.getElementById('user-balance');
+            const currentBalance = parseInt(balanceEl.textContent.replace(/[^0-9]/g, ''));
+            balanceEl.textContent = formatNumber(currentBalance + amount) + ' BKC';
+        }
+        
+        // Инициализация
+        window.onload = function() {
+            initChart();
+            loadCurrentGame();
+            loadGameHistory();
+            loadStats();
+            
+            // Обновление данных каждые 10 секунд
+            setInterval(() => {
+                loadStats();
+            }, 10000);
+        };
+    </script>
+</body>
+</html>

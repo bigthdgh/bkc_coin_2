@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BKC Exchange Rate</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .rate-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: transform 0.3s ease;
+        }
+        .rate-card:hover {
+            transform: translateY(-5px);
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
+                <i class="fas fa-chart-line mr-3"></i>BKC Exchange Rate
+            </h1>
+            <p class="text-center text-gray-400 mt-2">Реальный курс BKC к доллару и другим валютам</p>
+        </header>
+
+        <!-- Current Rate Display -->
+        <div class="mb-8">
+            <div class="rate-card rounded-lg p-8 text-center text-white">
+                <div class="mb-4">
+                    <i class="fas fa-coins text-6xl text-yellow-400"></i>
+                </div>
+                <h2 class="text-3xl font-bold mb-2">Текущий курс</h2>
+                <div class="text-5xl font-bold">
+                    <span id="currentRate" class="pulse">1000</span> BKC = 1 USD
+                </div>
+                <div class="mt-4 text-sm text-gray-200">
+                    <i class="fas fa-clock mr-2"></i>
+                    Обновлено: <span id="lastUpdate">--:--:--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exchange Rates Grid -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold mb-6 text-purple-400">
+                <i class="fas fa-exchange-alt mr-2"></i>Курсы обмена
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="ratesGrid">
+                <!-- Exchange rates will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold mb-6 text-purple-400">
+                <i class="fas fa-chart-area mr-2"></i>График курса (24 часа)
+            </h2>
+            <div class="bg-gray-800 rounded-lg p-6">
+                <div class="chart-container">
+                    <canvas id="rateChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-gray-800 rounded-lg p-6 text-center">
+                <i class="fas fa-arrow-up text-4xl text-green-500 mb-4"></i>
+                <h3 class="text-2xl font-bold" id="high24h">1050</h3>
+                <p class="text-gray-400">Максимум за 24ч</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-6 text-center">
+                <i class="fas fa-arrow-down text-4xl text-red-500 mb-4"></i>
+                <h3 class="text-2xl font-bold" id="low24h">950</h3>
+                <p class="text-gray-400">Минимум за 24ч</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-6 text-center">
+                <i class="fas fa-chart-bar text-4xl text-blue-500 mb-4"></i>
+                <h3 class="text-2xl font-bold" id="avg24h">1000</h3>
+                <p class="text-gray-400">Среднее за 24ч</p>
+            </div>
+        </div>
+
+        <!-- Calculator -->
+        <div class="bg-gray-800 rounded-lg p-6">
+            <h2 class="text-2xl font-bold mb-6 text-purple-400">
+                <i class="fas fa-calculator mr-2"></i>Калькулятор обмена
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Из BKC в USD</label>
+                    <div class="flex space-x-2">
+                        <input type="number" id="bkcToUsd" placeholder="Введите BKC" 
+                            class="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <button onclick="convertBkcToUsd()" 
+                            class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <input type="text" id="usdFromBkc" readonly placeholder="USD" 
+                            class="flex-1 px-4 py-2 bg-gray-600 border border-gray-600 rounded-lg">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Из USD в BKC</label>
+                    <div class="flex space-x-2">
+                        <input type="number" id="usdToBkc" placeholder="Введите USD" 
+                            class="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <button onclick="convertUsdToBkc()" 
+                            class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <input type="text" id="bkcFromUsd" readonly placeholder="BKC" 
+                            class="flex-1 px-4 py-2 bg-gray-600 border border-gray-600 rounded-lg">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentRate = 1000; // 1000 BKC = 1 USD
+        let rateHistory = [];
+        let chart = null;
+
+        // Initialize exchange rates
+        const exchangeRates = [
+            { currency: 'USD', rate: 1000, symbol: '$', flag: '🇺🇸' },
+            { currency: 'EUR', rate: 1100, symbol: '€', flag: '🇪🇺' },
+            { currency: 'RUB', rate: 11, symbol: '₽', flag: '🇷🇺' },
+            { currency: 'GBP', rate: 1300, symbol: '£', flag: '🇬🇧' },
+            { currency: 'JPY', rate: 7, symbol: '¥', flag: '🇯🇵' },
+            { currency: 'CNY', rate: 140, symbol: '¥', flag: '🇨🇳' },
+            { currency: 'TON', rate: 200, symbol: 'TON', flag: '💎' },
+            { currency: 'BTC', rate: 50000000, symbol: 'BTC', flag: '🟧' }
+        ];
+
+        // Render exchange rates
+        function renderRates() {
+            const container = document.getElementById('ratesGrid');
+            container.innerHTML = '';
+            
+            exchangeRates.forEach(rate => {
+                const card = document.createElement('div');
+                card.className = 'bg-gray-800 rounded-lg p-6 text-white text-center';
+                
+                card.innerHTML = `
+                    <div class="text-2xl mb-2">${rate.flag}</div>
+                    <div class="text-lg font-bold mb-1">${rate.currency}</div>
+                    <div class="text-2xl font-bold text-purple-400">${rate.rate.toLocaleString()}</div>
+                    <div class="text-sm text-gray-400">BKC</div>
+                    <div class="text-xs text-gray-500 mt-2">1 ${rate.currency} = ${rate.rate} BKC</div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        // Initialize chart
+        function initChart() {
+            const ctx = document.getElementById('rateChart').getContext('2d');
+            
+            // Generate mock historical data (24 hours)
+            const now = new Date();
+            for (let i = 23; i >= 0; i--) {
+                const time = new Date(now.getTime() - i * 3600000);
+                const variation = Math.random() * 100 - 50; // ±50 variation
+                rateHistory.push({
+                    time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    rate: currentRate + variation
+                });
+            }
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: rateHistory.map(item => item.time),
+                    datasets: [{
+                        label: 'BKC/USD',
+                        data: rateHistory.map(item => item.rate),
+                        borderColor: 'rgb(147, 51, 234)',
+                        backgroundColor: 'rgba(147, 51, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'white'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'white'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'white',
+                                callback: function(value) {
+                                    return value.toLocaleString() + ' BKC';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update statistics
+        function updateStatistics() {
+            const rates = rateHistory.map(item => item.rate);
+            const high = Math.max(...rates);
+            const low = Math.min(...rates);
+            const avg = rates.reduce((a, b) => a + b, 0) / rates.length;
+            
+            document.getElementById('high24h').textContent = high.toLocaleString();
+            document.getElementById('low24h').textContent = low.toLocaleString();
+            document.getElementById('avg24h').textContent = Math.round(avg).toLocaleString();
+        }
+
+        // Conversion functions
+        function convertBkcToUsd() {
+            const bkcAmount = parseFloat(document.getElementById('bkcToUsd').value);
+            if (!isNaN(bkcAmount)) {
+                const usdAmount = bkcAmount / currentRate;
+                document.getElementById('usdFromBkc').value = usdAmount.toFixed(2);
+            }
+        }
+
+        function convertUsdToBkc() {
+            const usdAmount = parseFloat(document.getElementById('usdToBkc').value);
+            if (!isNaN(usdAmount)) {
+                const bkcAmount = usdAmount * currentRate;
+                document.getElementById('bkcFromUsd').value = bkcAmount.toLocaleString();
+            }
+        }
+
+        // Update current rate display
+        function updateCurrentRate() {
+            document.getElementById('currentRate').textContent = currentRate.toLocaleString();
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        }
+
+        // Simulate real-time updates
+        function simulateRateUpdate() {
+            // Small random variation to simulate market movement
+            const change = (Math.random() - 0.5) * 10; // ±5 BKC change
+            currentRate = Math.max(900, Math.min(1100, currentRate + change));
+            
+            // Update chart
+            const now = new Date();
+            rateHistory.push({
+                time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                rate: currentRate
+            });
+            
+            if (rateHistory.length > 24) {
+                rateHistory.shift(); // Keep only 24 hours
+            }
+            
+            // Update chart data
+            chart.data.labels = rateHistory.map(item => item.time);
+            chart.data.datasets[0].data = rateHistory.map(item => item.rate);
+            chart.update('none');
+            
+            updateCurrentRate();
+            updateStatistics();
+        }
+
+        // Auto-update every 5 seconds
+        function startRealTimeUpdates() {
+            setInterval(simulateRateUpdate, 5000);
+        }
+
+        // Input event listeners
+        document.getElementById('bkcToUsd').addEventListener('input', convertBkcToUsd);
+        document.getElementById('usdToBkc').addEventListener('input', convertUsdToBkc);
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderRates();
+            initChart();
+            updateStatistics();
+            updateCurrentRate();
+            startRealTimeUpdates();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>👑 Админ подписки - BKC Coin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1e293b 0%, #2d3748 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .plan-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            transition: all 0.3s ease;
+        }
+        
+        .plan-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
+        }
+        
+        .price-display {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .feature-item {
+            transition: all 0.2s ease;
+        }
+        
+        .feature-item:hover {
+            transform: translateX(5px);
+        }
+        
+        .status-active {
+            background: linear-gradient(45deg, #10b981, #059669);
+        }
+        
+        .status-inactive {
+            background: linear-gradient(45deg, #6b7280, #4b5563);
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: #4b5563;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .toggle-switch.active {
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+        }
+        
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+        
+        .toggle-switch.active::after {
+            transform: translateX(30px);
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen p-4">
+        <!-- Header -->
+        <header class="glass-effect rounded-2xl p-6 mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-4xl font-bold text-white mb-2">👑 Админ подписки</h1>
+                    <p class="text-gray-400">Управление планами и статистика</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-gray-400 text-sm mb-1">Всего подписок</div>
+                    <div class="text-3xl font-bold text-blue-400" id="total-subscriptions">0</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Основной контент -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Управление планами -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-white">📋 Управление планами</h3>
+                        <button onclick="showCreatePlanModal()" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-green-600 hover:to-emerald-700">
+                            ➕ Создать план
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="plans-grid">
+                        <!-- План будут загружены сюда -->
+                    </div>
+                </div>
+                
+                <!-- Статистика -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-xl font-bold text-white mb-6">📊 Статистика подписок</h3>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="plan-card rounded-lg p-4 text-center">
+                            <div class="text-3xl font-bold text-blue-400" id="active-subs">0</div>
+                            <div class="text-gray-400 text-sm">Активных</div>
+                        </div>
+                        <div class="plan-card rounded-lg p-4 text-center">
+                            <div class="text-3xl font-bold text-green-400" id="revenue-today">0</div>
+                            <div class="text-gray-400 text-sm">Доход сегодня (BKC)</div>
+                        </div>
+                        <div class="plan-card rounded-lg p-4 text-center">
+                            <div class="text-3xl font-bold text-yellow-400" id="new-subs-today">0</div>
+                            <div class="text-gray-400 text-sm">Новых сегодня</div>
+                        </div>
+                        <div class="plan-card rounded-lg p-4 text-center">
+                            <div class="text-3xl font-bold text-red-400" id="churn-rate">0%</div>
+                            <div class="text-gray-400 text-sm">Отток</div>
+                        </div>
+                    </div>
+                    
+                    <!-- График доходов -->
+                    <div class="mt-6">
+                        <h4 class="text-lg font-semibold text-white mb-4">📈 График доходов</h4>
+                        <div class="bg-black/20 rounded-lg p-4">
+                            <canvas id="revenue-chart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Боковая панель -->
+            <div class="space-y-6">
+                <!-- Список подписчиков -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-lg font-bold text-white mb-4">👥 Подписчики</h3>
+                    
+                    <div class="mb-4">
+                        <input type="text" id="search-user" placeholder="Поиск по ID или username" 
+                               class="w-full bg-gray-800 text-white rounded-lg p-3 border border-gray-600/30 focus:border-blue-500/50">
+                    </div>
+                    
+                    <div class="space-y-3 max-h-96 overflow-y-auto" id="subscribers-list">
+                        <!-- Подписчики будут загружены сюда -->
+                    </div>
+                </div>
+                
+                <!-- Быстрые действия -->
+                <div class="glass-effect rounded-2xl p-6">
+                    <h3 class="text-lg font-bold text-white mb-4">⚡ Быстрые действия</h3>
+                    
+                    <div class="space-y-3">
+                        <button onclick="exportSubscribers()" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-lg hover:from-blue-600 hover:to-blue-700">
+                            📥 Экспорт подписчиков
+                        </button>
+                        <button onclick="sendNotification()" class="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 rounded-lg hover:from-purple-600 hover:to-purple-700">
+                            📧 Отправить уведомление
+                        </button>
+                        <button onclick="refreshStats()" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg hover:from-green-600 hover:to-green-700">
+                            🔄 Обновить статистику
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно создания/редактирования плана -->
+    <div id="plan-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden">
+        <div class="flex items-center justify-center p-4 min-h-screen">
+            <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 max-w-2xl w-full border border-gray-600/50">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-white" id="modal-title">Создать план</h3>
+                    <button onclick="closePlanModal()" class="text-gray-400 hover:text-gray-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <form id="plan-form" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-300 text-sm mb-2">Название плана</label>
+                            <input type="text" id="plan-name" required
+                                   class="w-full bg-gray-800 text-white rounded-lg p-3 border border-gray-600/30 focus:border-blue-500/50">
+                        </div>
+                        <div>
+                            <label class="block text-gray-300 text-sm mb-2">ID плана</label>
+                            <input type="text" id="plan-id" required
+                                   class="w-full bg-gray-800 text-white rounded-lg p-3 border border-gray-600/30 focus:border-blue-500/50">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-300 text-sm mb-2">Цена (BKC)</label>
+                            <input type="number" id="price-bkc" min="0" step="1000"
+                                   class="w-full bg-gray-800 text-white rounded-lg p-3 border border-gray-600/30 focus:border-blue-500/50">
+                        </div>
+                        <div>
+                            <label class="block text-gray-300 text-sm mb-2">Цена (TON)</label>
+                            <input type="number" id="price-ton" min="0" step="0.1"
+                                   class="w-full bg-gray-800 text-white rounded-lg p-3 border border-gray-600/30 focus:border-blue-500/50">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-300 text-sm mb-2">Длительность (дни)</label>
+                            <input type="number" id="duration-days" min="1" max="365" required
+                                   class="w-full bg-gray-800 text-white rounded-lg p-3 border border-gray-600/30 focus:border-blue-500/50">
+                        </div>
+                        <div>
+                            <label class="block text-gray-300 text-sm mb-2">Лимит тапов</label>
+                            <input type="number" id="tap-limit" min="0" step="1000"
+                                   class="w-full bg-gray-800 text-white rounded-lg p-3 border border-gray-600/30 focus:border-blue-500/50">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-gray-300 text-sm mb-2">Налог (%)</label>
+                            <input type="number" id="tax-rate" min="0" max="100" step="0.1" required
+                                   class="w-full bg-gray-800 text-white rounded-lg p-3 border border-gray-600/30 focus:border-blue-500/50">
+                        </div>
+                        <div>
+                            <label class="block text-gray-300 text-sm mb-2">Комиссия переводов (%)</label>
+                            <input type="number" id="transfer-commission" min="0" max="100" step="0.1" required
+                                   class="w-full bg-gray-800 text-white rounded-lg p-3 border border-gray-600/30 focus:border-blue-500/50">
+                        </div>
+                        <div>
+                            <label class="block text-gray-300 text-sm mb-2">Комиссия кредитов (%)</label>
+                            <input type="number" id="credit-commission" min="0" max="100" step="0.1" required
+                                   class="w-full bg-gray-800 text-white rounded-lg p-3 border border-gray-600/30 focus:border-blue-500/50">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-300 text-sm mb-2">Особенности (каждая с новой строки)</label>
+                        <textarea id="features" rows="4" required
+                                  class="w-full bg-gray-800 text-white rounded-lg p-3 border border-gray-600/30 focus:border-blue-500/50"
+                                  placeholder="Бесплатно&#10;Лимит тапов: 5,000&#10;Налог: 10%"></textarea>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <label class="flex items-center text-gray-300 text-sm">
+                            <input type="checkbox" id="plan-active" class="mr-2">
+                            Активен
+                        </label>
+                        
+                        <div class="space-x-3">
+                            <button type="submit" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-600 hover:to-emerald-700">
+                                💾 Сохранить
+                            </button>
+                            <button type="button" onclick="closePlanModal()" class="bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-700">
+                                Отмена
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Переменные
+        let plans = [];
+        let subscribers = [];
+        let stats = {};
+        let revenueChart = null;
+        let currentEditingPlan = null;
+        
+        // Инициализация
+        window.onload = function() {
+            loadPlans();
+            loadSubscribers();
+            loadStats();
+            initRevenueChart();
+        };
+        
+        // Загрузка планов
+        async function loadPlans() {
+            try {
+                const response = await fetch('/api/v1/admin/subscriptions/plans');
+                const result = await response.json();
+                
+                if (result.success) {
+                    plans = result.plans;
+                    displayPlans();
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки планов:', error);
+            }
+        }
+        
+        // Отображение планов
+        function displayPlans() {
+            const grid = document.getElementById('plans-grid');
+            grid.innerHTML = '';
+            
+            plans.forEach(plan => {
+                const planCard = document.createElement('div');
+                planCard.className = 'plan-card rounded-xl p-6 border border-gray-600/30 hover:border-blue-500/50 cursor-pointer';
+                
+                const statusClass = plan.active ? 'status-active' : 'status-inactive';
+                const statusText = plan.active ? 'АКТИВЕН' : 'НЕАКТИВЕН';
+                
+                planCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h4 class="text-xl font-bold text-white mb-2">${plan.name}</h4>
+                            <div class="price-display">${plan.price_bkc.toLocaleString()} BKC</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="${statusClass} text-xs px-2 py-1 rounded-full font-bold">
+                                ${statusText}
+                            </div>
+                            <div class="mt-2 space-x-2">
+                                <button onclick="editPlan('${plan.id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+                                    ✏️
+                                </button>
+                                <button onclick="deletePlan('${plan.id}')" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Длительность:</span>
+                            <span class="text-white">${plan.duration_days} дней</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Лимит тапов:</span>
+                            <span class="text-white">${plan.tap_limit.toLocaleString()}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Налог:</span>
+                            <span class="text-yellow-400">${plan.tax_rate}%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Комиссия переводов:</span>
+                            <span class="text-green-400">${plan.transfer_commission}%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Комиссия кредитов:</span>
+                            <span class="text-blue-400">${plan.credit_commission}%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <div class="text-gray-400 text-sm mb-2">Особенности:</div>
+                        <div class="space-y-1">
+                            ${plan.features.map(feature => `
+                                <div class="feature-item flex items-center text-gray-300 text-sm">
+                                    <svg class="w-4 h-4 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    ${feature}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(planCard);
+            });
+        }
+        
+        // Редактирование плана
+        function editPlan(planId) {
+            const plan = plans.find(p => p.id === planId);
+            if (!plan) return;
+            
+            currentEditingPlan = plan;
+            document.getElementById('modal-title').textContent = 'Редактировать план';
+            document.getElementById('plan-id').value = plan.id;
+            document.getElementById('plan-name').value = plan.name;
+            document.getElementById('price-bkc').value = plan.price_bkc;
+            document.getElementById('price-ton').value = plan.price_ton;
+            document.getElementById('duration-days').value = plan.duration_days;
+            document.getElementById('tap-limit').value = plan.tap_limit;
+            document.getElementById('tax-rate').value = plan.tax_rate;
+            document.getElementById('transfer-commission').value = plan.transfer_commission;
+            document.getElementById('credit-commission').value = plan.credit_commission;
+            document.getElementById('features').value = plan.features.join('\n');
+            document.getElementById('plan-active').checked = plan.active;
+            
+            document.getElementById('plan-modal').classList.remove('hidden');
+        }
+        
+        // Удаление плана
+        async function deletePlan(planId) {
+            if (!confirm('Вы уверены, что хотите удалить этот план?')) return;
+            
+            try {
+                const response = await fetch(`/api/v1/admin/subscriptions/plan/delete?plan_id=${planId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('План успешно удален', 'success');
+                    loadPlans();
+                } else {
+                    showMessage('Ошибка удаления плана', 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка удаления плана:', error);
+                showMessage('Ошибка при удалении плана', 'error');
+            }
+        }
+        
+        // Показать модальное окно
+        function showCreatePlanModal() {
+            currentEditingPlan = null;
+            document.getElementById('modal-title').textContent = 'Создать план';
+            document.getElementById('plan-form').reset();
+            document.getElementById('plan-modal').classList.remove('hidden');
+        }
+        
+        // Закрыть модальное окно
+        function closePlanModal() {
+            document.getElementById('plan-modal').classList.add('hidden');
+            currentEditingPlan = null;
+        }
+        
+        // Сохранение плана
+        document.getElementById('plan-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                plan_id: document.getElementById('plan-id').value,
+                name: document.getElementById('plan-name').value,
+                price_bkc: parseInt(document.getElementById('price-bkc').value) || 0,
+                price_ton: parseFloat(document.getElementById('price-ton').value) || 0,
+                duration_days: parseInt(document.getElementById('duration-days').value),
+                tap_limit: parseInt(document.getElementById('tap-limit').value) || 0,
+                tax_rate: parseFloat(document.getElementById('tax-rate').value),
+                transfer_commission: parseFloat(document.getElementById('transfer-commission').value),
+                credit_commission: parseFloat(document.getElementById('credit-commission').value),
+                features: document.getElementById('features').value.split('\n').filter(f => f.trim()),
+                active: document.getElementById('plan-active').checked
+            };
+            
+            const endpoint = currentEditingPlan ? '/api/v1/admin/subscriptions/plan/update' : '/api/v1/admin/subscriptions/plan/create';
+            
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(currentEditingPlan ? 'План обновлен' : 'План создан', 'success');
+                    closePlanModal();
+                    loadPlans();
+                } else {
+                    showMessage('Ошибка сохранения плана', 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка сохранения плана:', error);
+                showMessage('Ошибка при сохранении плана', 'error');
+            }
+        });
+        
+        // Загрузка подписчиков
+        async function loadSubscribers() {
+            try {
+                const response = await fetch('/api/v1/admin/subscriptions/list');
+                const result = await response.json();
+                
+                if (result.success) {
+                    subscribers = result.subscriptions;
+                    displaySubscribers();
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки подписчиков:', error);
+            }
+        }
+        
+        // Отображение подписчиков
+        function displaySubscribers() {
+            const list = document.getElementById('subscribers-list');
+            list.innerHTML = '';
+            
+            if (subscribers.length === 0) {
+                list.innerHTML = '<p class="text-gray-400 text-center">Подписчики не найдены</p>';
+                return;
+            }
+            
+            subscribers.forEach(sub => {
+                const subCard = document.createElement('div');
+                subCard.className = 'bg-gray-800/50 rounded-lg p-3 border border-gray-600/30 hover:border-gray-500/50';
+                
+                const planColors = {
+                    'basic': 'text-gray-400',
+                    'silver': 'text-purple-400',
+                    'gold': 'text-yellow-400'
+                };
+                
+                subCard.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-white font-bold">#${sub.user_id}</span>
+                                <span class="text-gray-400">@${sub.username}</span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="${planColors[sub.plan] || 'text-gray-400'} font-semibold">${sub.plan.toUpperCase()}</span>
+                                <span class="text-gray-400 ml-2">• ${sub.days_left} дней осталось</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-lg font-bold text-white">
+                                ${sub.price_bkc > 0 ? sub.price_bkc.toLocaleString() + ' BKC' : 'Бесплатно'}
+                            </div>
+                            <button onclick="cancelSubscription('${sub.id}')" class="mt-2 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">
+                                Отменить
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                list.appendChild(subCard);
+            });
+        }
+        
+        // Загрузка статистики
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/v1/admin/subscriptions/stats');
+                const result = await response.json();
+                
+                if (result.success) {
+                    stats = result.stats;
+                    displayStats();
+                    updateRevenueChart();
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки статистики:', error);
+            }
+        }
+        
+        // Отображение статистики
+        function displayStats() {
+            document.getElementById('total-subscriptions').textContent = stats.total_subscriptions || 0;
+            document.getElementById('active-subs').textContent = stats.active_subscriptions || 0;
+            document.getElementById('revenue-today').textContent = (stats.revenue_today_bkc / 1000000).toFixed(1) + 'M';
+            document.getElementById('new-subs-today').textContent = stats.new_subscriptions_today || 0;
+            document.getElementById('churn-rate').textContent = (stats.churn_rate || 0).toFixed(1) + '%';
+        }
+        
+        // Инициализация графика доходов
+        function initRevenueChart() {
+            const ctx = document.getElementById('revenue-chart').getContext('2d');
+            revenueChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Доход (BKC)',
+                        data: [],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+        
+        // Обновление графика
+        function updateRevenueChart() {
+            if (!revenueChart || !stats.revenue_history) return;
+            
+            // Временные данные для графика
+            const labels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+            const data = [85000000, 92000000, 78000000, 105000000, 112000000, 98000000, 125000000];
+            
+            revenueChart.data.labels = labels;
+            revenueChart.data.datasets[0].data = data;
+            revenueChart.update();
+        }
+        
+        // Отмена подписки
+        async function cancelSubscription(subId) {
+            if (!confirm('Вы уверены, что хотите отменить эту подписку?')) return;
+            
+            try {
+                const response = await fetch(`/api/v1/admin/subscriptions/cancel?user_id=${subId}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('Подписка отменена', 'success');
+                    loadSubscribers();
+                } else {
+                    showMessage('Ошибка отмены подписки', 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка отмены подписки:', error);
+                showMessage('Ошибка при отмене подписки', 'error');
+            }
+        }
+        
+        // Экспорт подписчиков
+        function exportSubscribers() {
+            const csvContent = "data:text/csv;charset=utf-8," + 
+                "ID,Username,Plan,Price,Started,Expires,Days Left,Status\n" +
+                subscribers.map(sub => 
+                    `${sub.user_id},${sub.username},${sub.plan},${sub.price_bkc},${sub.started_at},${sub.expires_at},${sub.days_left},${sub.status}`
+                ).join("\n");
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "subscribers.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showMessage('Подписчики экспортированы', 'success');
+        }
+        
+        // Отправка уведомления
+        function sendNotification() {
+            const message = prompt('Введите сообщение для подписчиков:');
+            if (!message) return;
+            
+            // TODO: Реализовать отправку уведомления
+            showMessage('Уведомление отправлено', 'success');
+        }
+        
+        // Обновление статистики
+        function refreshStats() {
+            loadStats();
+            showMessage('Статистика обновлена', 'success');
+        }
+        
+        // Поиск подписчиков
+        document.getElementById('search-user').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredSubscribers = subscribers.filter(sub => 
+                sub.user_id.toString().includes(searchTerm) || 
+                sub.username.toLowerCase().includes(searchTerm)
+            );
+            
+            const list = document.getElementById('subscribers-list');
+            list.innerHTML = '';
+            
+            if (filteredSubscribers.length === 0) {
+                list.innerHTML = '<p class="text-gray-400 text-center">Подписчики не найдены</p>';
+                return;
+            }
+            
+            filteredSubscribers.forEach(sub => {
+                // Повторное использование логики отображения
+                const subCard = document.createElement('div');
+                subCard.className = 'bg-gray-800/50 rounded-lg p-3 border border-gray-600/30 hover:border-gray-500/50';
+                
+                const planColors = {
+                    'basic': 'text-gray-400',
+                    'silver': 'text-purple-400',
+                    'gold': 'text-yellow-400'
+                };
+                
+                subCard.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-white font-bold">#${sub.user_id}</span>
+                                <span class="text-gray-400">@${sub.username}</span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="${planColors[sub.plan] || 'text-gray-400'} font-semibold">${sub.plan.toUpperCase()}</span>
+                                <span class="text-gray-400 ml-2">• ${sub.days_left} дней осталось</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-lg font-bold text-white">
+                                ${sub.price_bkc > 0 ? sub.price_bkc.toLocaleString() + ' BKC' : 'Бесплатно'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                list.appendChild(subCard);
+            });
+        });
+        
+        // Вспомогательные функции
+        function showMessage(text, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 p-4 rounded-lg text-white font-semibold z-50 ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+            }`;
+            toast.textContent = text;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+        
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+    </script>
+</body>
+</html>

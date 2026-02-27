@@ -1,0 +1,552 @@
+/* BKC Coin - Optimized Animations */
+
+/* Performance optimized animations */
+:root {
+  --animation-duration-fast: 0.15s;
+  --animation-duration-normal: 0.3s;
+  --animation-duration-slow: 0.5s;
+  --animation-easing: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --animation-easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --animation-easing-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Hardware acceleration */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Tap animations */
+.tap-button {
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--animation-duration-fast) var(--animation-easing);
+}
+
+.tap-button:active {
+  transform: scale(0.95);
+  transition: transform var(--animation-duration-fast) var(--animation-easing);
+}
+
+.tap-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(60, 214, 198, 0.6) 0%, rgba(60, 214, 198, 0) 70%);
+  transform: scale(0);
+  animation: ripple 0.6s ease-out;
+  pointer-events: none;
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Coin animation */
+.coin-collected {
+  position: absolute;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #3cd6c6;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  animation: coinFloat 1.5s ease-out forwards;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+@keyframes coinFloat {
+  0% {
+    transform: translateY(0) scale(0.5);
+    opacity: 0;
+  }
+  20% {
+    transform: translateY(-10px) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-60px) scale(0.8);
+    opacity: 0;
+  }
+}
+
+/* Energy animations */
+.energy-bar {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, #1a1f2e 0%, #16213e 100%);
+}
+
+.energy-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3cd6c6 0%, #22d3ee 100%);
+  transition: width var(--animation-duration-normal) var(--animation-easing-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.energy-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: energyShine 2s infinite;
+}
+
+@keyframes energyShine {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.energy-pulse {
+  animation: energyPulse 2s infinite;
+}
+
+@keyframes energyPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* Achievement animations */
+.achievement-unlock {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  background: linear-gradient(135deg, #0891b2, #06b6d4);
+  color: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  z-index: 10000;
+  animation: achievementPop 0.5s var(--animation-easing-bounce) forwards;
+}
+
+@keyframes achievementPop {
+  0% {
+    transform: translate(-50%, -50%) scale(0) rotate(-180deg);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1) rotate(10deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.achievement-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  animation: iconBounce 1s var(--animation-easing-bounce);
+}
+
+@keyframes iconBounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+/* Combo animations */
+.combo-indicator {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #ff6b6b, #feca57);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  font-weight: bold;
+  font-size: 1.2rem;
+  transform: translateX(100px);
+  transition: transform var(--animation-duration-fast) var(--animation-easing-bounce);
+  z-index: 1000;
+}
+
+.combo-indicator.active {
+  transform: translateX(0);
+  animation: comboShake 0.5s var(--animation-easing-bounce);
+}
+
+@keyframes comboShake {
+  0%, 100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(-5px) rotate(-5deg);
+  }
+  75% {
+    transform: translateX(5px) rotate(5deg);
+  }
+}
+
+.combo-multiplier {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #feca57;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  animation: multiplierGlow 1s infinite alternate;
+}
+
+@keyframes multiplierGlow {
+  0% {
+    text-shadow: 0 0 10px rgba(254, 202, 87, 0.8);
+  }
+  100% {
+    text-shadow: 0 0 20px rgba(254, 202, 87, 0.4);
+  }
+}
+
+/* Level up animations */
+.level-up-effect {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 4rem;
+  font-weight: bold;
+  color: #ffd700;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+  z-index: 10000;
+  animation: levelUpBurst 1s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes levelUpBurst {
+  0% {
+    transform: translate(-50%, -50%) scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.5) rotate(180deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* Notification animations */
+.notification-slide-in {
+  animation: slideInRight 0.3s var(--animation-easing-smooth);
+}
+
+.notification-slide-out {
+  animation: slideOutRight 0.3s var(--animation-easing-smooth);
+}
+
+@keyframes slideInRight {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.notification-bounce {
+  animation: notificationBounce 0.5s var(--animation-easing-bounce);
+}
+
+@keyframes notificationBounce {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Loading animations */
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(60, 214, 198, 0.3);
+  border-top: 4px solid #3cd6c6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-dots {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.loading-dots span {
+  width: 8px;
+  height: 8px;
+  background: #3cd6c6;
+  border-radius: 50%;
+  animation: loadingDots 1.4s infinite ease-in-out both;
+}
+
+.loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+.loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+.loading-dots span:nth-child(3) { animation-delay: 0s; }
+
+@keyframes loadingDots {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Button hover effects */
+.btn-hover-lift {
+  transition: transform var(--animation-duration-fast) var(--animation-easing),
+              box-shadow var(--animation-duration-fast) var(--animation-easing);
+}
+
+.btn-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.btn-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-glow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(60, 214, 198, 0.4), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-glow:hover::before {
+  left: 100%;
+}
+
+/* Card animations */
+.card-entrance {
+  animation: cardSlideIn 0.4s var(--animation-easing-smooth);
+}
+
+@keyframes cardSlideIn {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.card-hover-lift {
+  transition: transform var(--animation-duration-fast) var(--animation-easing),
+              box-shadow var(--animation-duration-fast) var(--animation-easing);
+}
+
+.card-hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Progress bar animations */
+.progress-bar-fill {
+  transition: width var(--animation-duration-normal) var(--animation-easing-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: progressShine 2s infinite;
+}
+
+@keyframes progressShine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Modal animations */
+.modal-backdrop {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+  animation: modalSlideIn 0.4s var(--animation-easing-bounce);
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideIn {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Responsive animations */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .achievement-unlock {
+    padding: 1.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .level-up-effect {
+    font-size: 3rem;
+  }
+  
+  .combo-indicator {
+    top: 10px;
+    right: 10px;
+    padding: 0.3rem 0.8rem;
+    font-size: 1rem;
+  }
+}
+
+/* Performance optimizations */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+.animation-paused {
+  animation-play-state: paused !important;
+}
+
+/* GPU acceleration hints */
+.gpu-layer {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.smooth-animation {
+  animation-timing-function: var(--animation-easing-smooth);
+}
+
+/* Utility classes */
+.animate-once {
+  animation-iteration-count: 1;
+}
+
+.animate-infinite {
+  animation-iteration-count: infinite;
+}
+
+.animate-reverse {
+  animation-direction: reverse;
+}
+
+.animate-alternate {
+  animation-direction: alternate;
+}
+
+/* Dark mode optimized animations */
+@media (prefers-color-scheme: dark) {
+  .coin-collected {
+    color: #22d3ee;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  }
+  
+  .achievement-unlock {
+    background: linear-gradient(135deg, #22d3ee, #0891b2);
+  }
+  
+  .combo-indicator {
+    background: linear-gradient(135deg, #feca57, #ff6b6b);
+  }
+}
+
+/* Light mode optimized animations */
+@media (prefers-color-scheme: light) {
+  .coin-collected {
+    color: #0891b2;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
+  .achievement-unlock {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+  }
+}

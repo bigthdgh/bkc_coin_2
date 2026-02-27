@@ -1,0 +1,44 @@
+{
+  "telegram": {
+    "bot_token": "8574043213:AAEAq3LHxM_38pdoiU3AKnuzzWIzEP8LMi0",
+    "bot_username": "@bkc_coin_bot",
+    "admin_id": 8425434588,
+    "webhook_secret": "bkc_coin_webhook_secret",
+    "channel": "https://t.me/BKCCOINOFFICIAL"
+  },
+  "ton": {
+    "api_key": "AHIRWAHVAEPU57IAAAAHPR2HMUAFO3SOIHX5UQJKP47OYHBJXH2ZUISDGIKVIAMDIJJTNUI",
+    "commission_wallet": "UQAEWAnkzkh2dUrTkVN0irMYoYgXInIGb5A_wBmqPJOVVKwX",
+    "rates": {
+      "ton_per_usd": 1.43,
+      "bkc_per_usd": 1000,
+      "min_exchange_rate": 0.70
+    }
+  },
+  "servers": {
+    "render": [
+      "https://bkc-coin-api-1.onrender.com",
+      "https://bkc-coin-api-2.onrender.com", 
+      "https://bkc-coin-api-3.onrender.com",
+      "https://bkc-coin-api-4.onrender.com",
+      "https://bkc-coin-api-5.onrender.com"
+    ]
+  },
+  "economy": {
+    "nft_prices_usd": {
+      "bronze": 30,
+      "silver": 80,
+      "gold": 300
+    },
+    "p2p": {
+      "commission_percent": 5,
+      "min_order_bkc": 1000,
+      "max_order_bkc": 100000
+    },
+    "credits": {
+      "max_amount_bkc": 5000,
+      "interest_percent": 10,
+      "auto_deduct_pct": 50
+    }
+  }
+}
